@@ -130,8 +130,12 @@ export function generateToken(payload: any): string {
 // Верификация JWT токена
 export function verifyToken(token: string): any {
   try {
-    return jwt.verify(token, process.env.SUPABASE_JWT_SECRET!)
+    console.log('Verifying token with secret:', !!process.env.SUPABASE_JWT_SECRET)
+    const decoded = jwt.verify(token, process.env.SUPABASE_JWT_SECRET!)
+    console.log('Token verified successfully:', decoded)
+    return decoded
   } catch (error) {
+    console.error('Token verification failed:', error)
     return null
   }
 }
