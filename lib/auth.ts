@@ -4,6 +4,8 @@ import { UserRole } from '@/types/database'
 import { redirect } from 'next/navigation'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { NextRequest } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // Получение текущего пользователя
 export async function getCurrentUser() {
@@ -34,8 +36,45 @@ export async function getCurrentUser() {
   }
 }
 
-// Проверка авторизации
-export async function requireAuth() {
+// Проверка авторизации для API
+export async function requireAuth(request: NextRequest) {
+  try {
+    // Получаем токен из cookies
+    const authToken = request.cookies.get('auth-token')?.value
+
+    if (!authToken) {
+      throw new Error('No auth token')
+    }
+
+    // Верифицируем токен
+    const decoded = verifyToken(authToken)
+    if (!decoded) {
+      throw new Error('Invalid token')
+    }
+
+    const supabase = createAdminClient()
+
+    // Получаем данные пользователя
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decoded.userId)
+      .eq('is_active', true)
+      .single()
+
+    if (error || !user) {
+      throw new Error('User not found')
+    }
+
+    return user
+  } catch (error) {
+    console.error('Auth error:', error)
+    throw error
+  }
+}
+
+// Проверка авторизации для страниц
+export async function requireAuthPage() {
   const user = await getCurrentUser()
   
   if (!user) {
@@ -47,7 +86,7 @@ export async function requireAuth() {
 
 // Проверка роли пользователя
 export async function requireRole(allowedRoles: UserRole[]) {
-  const user = await requireAuth()
+  const user = await requireAuthPage()
   
   if (!allowedRoles.includes(user.role as UserRole)) {
     redirect('/unauthorized')

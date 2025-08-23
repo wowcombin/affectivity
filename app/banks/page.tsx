@@ -111,29 +111,56 @@ export default function BanksPage() {
 
   const loadData = async () => {
     try {
+      // Сначала тестируем аутентификацию
+      const authTestRes = await fetch('/api/test-auth')
+      console.log('Auth test response:', authTestRes.status)
+      
+      if (!authTestRes.ok) {
+        const authError = await authTestRes.json()
+        console.error('Auth error:', authError)
+        toast.error('Ошибка аутентификации: ' + authError.error)
+        return
+      }
+
       const [banksRes, accountsRes, cardsRes] = await Promise.all([
         fetch('/api/banks'),
         fetch('/api/bank-accounts'),
         fetch('/api/cards')
       ])
 
+      console.log('Banks response:', banksRes.status)
+      console.log('Accounts response:', accountsRes.status)
+      console.log('Cards response:', cardsRes.status)
+
       if (banksRes.ok) {
         const banksData = await banksRes.json()
         setBanks(banksData.banks)
+      } else {
+        const banksError = await banksRes.json()
+        console.error('Banks error:', banksError)
+        toast.error('Ошибка загрузки банков: ' + banksError.error)
       }
 
       if (accountsRes.ok) {
         const accountsData = await accountsRes.json()
         setBankAccounts(accountsData.bankAccounts)
+      } else {
+        const accountsError = await accountsRes.json()
+        console.error('Accounts error:', accountsError)
+        toast.error('Ошибка загрузки аккаунтов: ' + accountsError.error)
       }
 
       if (cardsRes.ok) {
         const cardsData = await cardsRes.json()
         setCards(cardsData.cards)
+      } else {
+        const cardsError = await cardsRes.json()
+        console.error('Cards error:', cardsError)
+        toast.error('Ошибка загрузки карт: ' + cardsError.error)
       }
     } catch (error) {
       console.error('Error loading data:', error)
-      toast.error('Ошибка загрузки данных')
+      toast.error('Ошибка загрузки данных: ' + error.message)
     } finally {
       setIsLoading(false)
     }

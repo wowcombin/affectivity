@@ -81,17 +81,31 @@ export default function WorkFilesPage() {
 
   const loadWorkFiles = async () => {
     try {
+      // Сначала тестируем аутентификацию
+      const authTestRes = await fetch('/api/test-auth')
+      console.log('Auth test response:', authTestRes.status)
+      
+      if (!authTestRes.ok) {
+        const authError = await authTestRes.json()
+        console.error('Auth error:', authError)
+        toast.error('Ошибка аутентификации: ' + authError.error)
+        return
+      }
+
       const response = await fetch('/api/work-files')
+      console.log('Work files response:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
         setWorkFiles(data.workFiles)
       } else {
-        console.error('Failed to load work files')
-        toast.error('Ошибка загрузки рабочих файлов')
+        const error = await response.json()
+        console.error('Work files error:', error)
+        toast.error('Ошибка загрузки рабочих файлов: ' + error.error)
       }
     } catch (error) {
       console.error('Error loading work files:', error)
-      toast.error('Ошибка загрузки рабочих файлов')
+      toast.error('Ошибка загрузки рабочих файлов: ' + error.message)
     } finally {
       setIsLoading(false)
     }
