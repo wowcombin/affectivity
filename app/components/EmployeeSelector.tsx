@@ -28,6 +28,21 @@ export default function EmployeeSelector({ onEmployeeSelect, selectedEmployee, u
     loadEmployees()
   }, [])
 
+  // Закрываем выпадающее меню при клике вне его области
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.employee-selector')) {
+        setShowDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
   const loadEmployees = async () => {
     try {
       // Пока используем моковые данные
@@ -143,7 +158,7 @@ export default function EmployeeSelector({ onEmployeeSelect, selectedEmployee, u
         </div>
       </div>
 
-      <div className="relative">
+      <div className="relative employee-selector">
         <button
           onClick={() => setShowDropdown(!showDropdown)}
           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-left flex items-center justify-between"
@@ -171,7 +186,7 @@ export default function EmployeeSelector({ onEmployeeSelect, selectedEmployee, u
         </button>
 
         {showDropdown && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 z-50 max-h-64 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 z-[9999] max-h-64 overflow-y-auto">
             <div className="py-2">
               {getFilteredEmployees().map((employee) => (
                 <button
