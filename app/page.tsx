@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/Button'
+import Navigation from '@/app/components/Navigation'
 import { formatCurrency, formatDate, formatPercentage } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -118,16 +119,19 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      {/* Navigation */}
+      <Navigation userRole={user.role} />
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                <span className="text-white font-bold text-lg">A</span>
+                <span className="text-white font-bold text-lg">🏠</span>
               </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Affectivity Dashboard
+                Главный дашборд
               </h1>
             </div>
             
