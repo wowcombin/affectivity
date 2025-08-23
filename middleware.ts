@@ -1,5 +1,5 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import jwt from 'jsonwebtoken'
 
 export async function middleware(request: NextRequest) {
   // Пропускаем API запросы
@@ -7,93 +7,44 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
-
-  // Check for blocked IPs
-  const clientIP = request.headers.get('x-forwarded-for') || 
-                   request.headers.get('x-real-ip') ||
-                   request.ip || '';
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-        },
-      },
-    }
-  )
-
-  // Check if IP is blocked
-  const { data: blockedIP } = await supabase
-    .from('blocked_ips')
-    .select('*')
-    .eq('ip_address', clientIP)
-    .eq('is_active', true)
-    .single();
-
-  if (blockedIP) {
-    return new NextResponse(
-      JSON.stringify({
-        error: 'Access denied',
-        message: 'Your IP address has been blocked'
-      }),
-      {
-        status: 403,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+  // Пропускаем страницу логина
+  if (request.nextUrl.pathname.startsWith('/login')) {
+    return NextResponse.next()
   }
 
-  // Check authentication
-  const { data: { user } } = await supabase.auth.getUser()
+  // Проверяем JWT токен из Authorization header или localStorage (через cookie)
+  const authHeader = request.headers.get('authorization')
+  const authCookie = request.cookies.get('auth-token')?.value
+  
+  let token = null
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7)
+  } else if (authCookie) {
+    token = authCookie
+  }
 
-  // Protected routes
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
+  // Если нет токена, перенаправляем на логин
+  if (!token) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  return response
+  try {
+    // Проверяем токен
+    const decoded = jwt.verify(token, process.env.SUPABASE_JWT_SECRET!)
+    
+    if (!decoded) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // Токен валиден, пропускаем запрос
+    return NextResponse.next()
+    
+  } catch (error) {
+    // Токен невалиден, перенаправляем на логин
+    console.error('JWT verification failed:', error)
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 }
 
 export const config = {
