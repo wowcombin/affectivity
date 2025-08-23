@@ -181,9 +181,24 @@ a {
   z-index: 999999;
 }
 
-/* Force dropdowns to be above everything */
+/* Force dropdowns to be above everything but keep positioning */
 .dropdown-container .absolute,
 .employee-selector .absolute {
-  position: fixed !important;
+  z-index: 999999 !important;
+}
+
+/* Additional z-index boost for navigation dropdowns */
+nav .dropdown-container .absolute {
+  z-index: 999999 !important;
+}
+
+/* Ensure proper stacking context for navigation */
+nav {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Force all dropdowns to be above everything */
+.z-\[99999\] {
   z-index: 999999 !important;
 }

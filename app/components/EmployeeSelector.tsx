@@ -186,7 +186,7 @@ export default function EmployeeSelector({ onEmployeeSelect, selectedEmployee, u
         </button>
 
         {showDropdown && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 z-[99999] max-h-64 overflow-y-auto" style={{ position: 'fixed', zIndex: 99999 }}>
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 z-[99999] max-h-64 overflow-y-auto">
             <div className="py-2">
               {getFilteredEmployees().map((employee) => (
                 <button

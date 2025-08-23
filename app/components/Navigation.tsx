@@ -131,7 +131,7 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
 
                     {/* Dropdown Menu */}
                     {isActive && (
-                      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border-2 border-blue-200 z-[99999] min-w-max transform opacity-100 scale-100 transition-all duration-200" style={{ position: 'fixed', zIndex: 99999 }}>
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border-2 border-blue-200 z-[99999] min-w-max transform opacity-100 scale-100 transition-all duration-200">
                         <div className="py-2">
                           {items.map((item) => {
                             const isActiveItem = pathname === item.href
@@ -209,7 +209,7 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 mt-2 mb-4 z-[99999]" style={{ position: 'fixed', zIndex: 99999 }}>
+            <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 mt-2 mb-4 z-[99999]">
               <div className="px-2 pt-2 pb-3 space-y-1">
                 {/* Role-based sections */}
                 {Object.keys(roleNavigation).map((role) => {
