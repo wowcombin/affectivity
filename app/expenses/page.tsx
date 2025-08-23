@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/Button'
+import Navigation from '@/app/components/Navigation'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -23,14 +25,22 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [userRole, setUserRole] = useState('')
   const [formData, setFormData] = useState({
     description: '',
     amount_usd: '',
     category: 'office',
     month: new Date().toISOString().slice(0, 7)
   })
+  const router = useRouter()
 
   useEffect(() => {
+    // Получаем роль пользователя
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const user = JSON.parse(userData)
+      setUserRole(user.role)
+    }
     loadExpenses()
   }, [])
 
@@ -84,6 +94,23 @@ export default function ExpensesPage() {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      localStorage.removeItem('auth-token')
+      localStorage.removeItem('user')
+      
+      // Очищаем cookie
+      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      
+      router.push('/login')
+      toast.success('Вы успешно вышли из системы')
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Ошибка при выходе из системы')
+    }
+  }
+
   const getTotalExpenses = () => {
     return expenses.reduce((sum, expense) => sum + expense.amount_usd, 0)
   }
@@ -109,27 +136,8 @@ export default function ExpensesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                <span className="text-white font-bold text-lg">💰</span>
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                Управление расходами
-              </h1>
-            </div>
-            <Button
-              onClick={() => setShowAddForm(true)}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-            >
-              ✨ + Добавить расход
-            </Button>
-          </div>
-        </div>
-      </header>
+      {/* Navigation */}
+      <Navigation userRole={userRole} onLogout={handleLogout} />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -239,7 +247,15 @@ export default function ExpensesPage() {
         {/* Expenses List */}
         <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 overflow-hidden">
           <div className="px-6 py-4 border-b border-white/20 bg-gradient-to-r from-green-50 to-emerald-50">
-            <h2 className="text-lg font-bold text-gray-900">💰 Список расходов</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-900">💰 Список расходов</h2>
+              <Button
+                onClick={() => setShowAddForm(true)}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                ✨ + Добавить расход
+              </Button>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-white/20">

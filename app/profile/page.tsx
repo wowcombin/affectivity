@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/Button'
+import Navigation from '@/app/components/Navigation'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -21,10 +23,12 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
+  const [userRole, setUserRole] = useState('')
   const [formData, setFormData] = useState({
     usdt_address: '',
     usdt_network: 'BEP20'
   })
+  const router = useRouter()
 
   useEffect(() => {
     loadUserProfile()
@@ -36,6 +40,7 @@ export default function ProfilePage() {
       if (userData) {
         const user = JSON.parse(userData)
         setUser(user)
+        setUserRole(user.role)
         setFormData({
           usdt_address: user.usdt_address || '',
           usdt_network: user.usdt_network || 'BEP20'
@@ -84,6 +89,23 @@ export default function ProfilePage() {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      localStorage.removeItem('auth-token')
+      localStorage.removeItem('user')
+      
+      // Очищаем cookie
+      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      
+      router.push('/login')
+      toast.success('Вы успешно вышли из системы')
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Ошибка при выходе из системы')
+    }
+  }
+
   const validateBEP20Address = (address: string) => {
     // Простая валидация BEP20 адреса (0x + 40 символов hex)
     return /^0x[a-fA-F0-9]{40}$/.test(address)
@@ -112,21 +134,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                <span className="text-white font-bold text-lg">👤</span>
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Мой профиль
-              </h1>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Navigation */}
+      <Navigation userRole={userRole} onLogout={handleLogout} />
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

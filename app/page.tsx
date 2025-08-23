@@ -119,40 +119,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
-      {/* Navigation */}
-      <Navigation userRole={user.role} />
-
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                <span className="text-white font-bold text-lg">🏠</span>
-              </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Главный дашборд
-              </h1>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-700 bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm">
-                <span className="font-semibold">{user.full_name || user.username}</span>
-                <span className="mx-2">•</span>
-                <span className="text-purple-600 font-medium">{user.role}</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="bg-white/50 hover:bg-white/70 backdrop-blur-sm border-white/20"
-              >
-                Выйти
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Navigation with Logout */}
+      <Navigation userRole={user.role} onLogout={handleLogout} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

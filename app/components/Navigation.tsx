@@ -7,9 +7,10 @@ import { Button } from '@/app/components/Button'
 
 interface NavigationProps {
   userRole: string
+  onLogout?: () => void
 }
 
-export default function Navigation({ userRole }: NavigationProps) {
+export default function Navigation({ userRole, onLogout }: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
@@ -103,11 +104,19 @@ export default function Navigation({ userRole }: NavigationProps) {
               ))}
             </div>
 
-            {/* User Info */}
+            {/* User Info and Logout */}
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-700 bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm">
                 <span className="font-semibold">{userRole}</span>
               </div>
+              {onLogout && (
+                <Button
+                  onClick={onLogout}
+                  className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                >
+                  🚪 Выйти
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -155,6 +164,18 @@ export default function Navigation({ userRole }: NavigationProps) {
                     {item.name}
                   </Link>
                 ))}
+                {onLogout && (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false)
+                      onLogout()
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-base font-medium transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg hover:from-red-600 hover:to-pink-600"
+                  >
+                    <span className="mr-3">🚪</span>
+                    Выйти
+                  </button>
+                )}
               </div>
             </div>
           )}
