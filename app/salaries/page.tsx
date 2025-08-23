@@ -1,18 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/Button'
-import { formatDate, formatCurrency, formatPercentage } from '@/lib/utils'
+import Navigation from '@/app/components/Navigation'
+import { formatDate, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface SalaryCalculation {
+  id: string
   month: string
-  gross_profit: number
+  total_profit: number
   total_expenses: number
-  expense_percentage: number
   net_profit: number
-  calculation_base: 'gross' | 'net'
+  total_salary_fund: number
+  employee_count: number
+  average_salary: number
+  calculated_by: string
   created_at: string
+  users: {
+    username: string
+    full_name: string
+  }
 }
 
 interface Salary {
@@ -20,10 +29,10 @@ interface Salary {
   employee_id: string
   month: string
   base_salary: number
-  performance_bonus: number
-  leader_bonus: number
+  bonus: number
   total_salary: number
-  is_paid: boolean
+  status: string
+  paid_at: string | null
   created_at: string
   employees: {
     users: {
@@ -36,30 +45,36 @@ interface Salary {
 
 export default function SalariesPage() {
   const [calculations, setCalculations] = useState<SalaryCalculation[]>([])
-  const [salaries, setSalaries] = useState<Salary[]>([])
+  const [currentSalaries, setCurrentSalaries] = useState<Salary[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7))
+  const [userRole, setUserRole] = useState('')
   const [isCalculating, setIsCalculating] = useState(false)
+  const router = useRouter()
 
   useEffect(() => {
+    // Получаем роль пользователя
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const user = JSON.parse(userData)
+      setUserRole(user.role)
+    }
     loadData()
-  }, [selectedMonth])
+  }, [])
 
   const loadData = async () => {
-    setIsLoading(true)
     try {
-      // Загружаем расчеты зарплат
+      // Загружаем историю расчетов
       const calcResponse = await fetch('/api/salaries/calculate')
       if (calcResponse.ok) {
         const calcData = await calcResponse.json()
         setCalculations(calcData.calculations || [])
       }
 
-      // Загружаем зарплаты сотрудников
-      const salariesResponse = await fetch(`/api/salaries?month=${selectedMonth}`)
+      // Загружаем текущие зарплаты
+      const salariesResponse = await fetch('/api/salaries')
       if (salariesResponse.ok) {
         const salariesData = await salariesResponse.json()
-        setSalaries(salariesData.salaries || [])
+        setCurrentSalaries(salariesData.salaries || [])
       }
     } catch (error) {
       console.error('Error loading data:', error)
@@ -77,12 +92,10 @@ export default function SalariesPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ month: selectedMonth }),
       })
 
       if (response.ok) {
-        const data = await response.json()
-        toast.success(`Зарплаты за ${selectedMonth} успешно рассчитаны!`)
+        toast.success('Зарплаты успешно рассчитаны!')
         loadData()
       } else {
         const error = await response.json()
@@ -96,193 +109,210 @@ export default function SalariesPage() {
     }
   }
 
-  const getTotalSalaries = () => {
-    return salaries.reduce((sum, salary) => sum + salary.total_salary, 0)
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      localStorage.removeItem('auth-token')
+      localStorage.removeItem('user')
+      
+      // Очищаем cookie
+      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      
+      router.push('/login')
+      toast.success('Вы успешно вышли из системы')
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Ошибка при выходе из системы')
+    }
   }
 
-  const getUnpaidSalaries = () => {
-    return salaries.filter(s => !s.is_paid).reduce((sum, salary) => sum + salary.total_salary, 0)
+  const getTotalSalaryFund = () => {
+    return currentSalaries.reduce((sum, s) => sum + s.total_salary, 0)
   }
 
-  const currentCalculation = calculations.find(c => c.month === selectedMonth)
+  const getPaidSalaries = () => {
+    return currentSalaries.filter(s => s.status === 'paid').length
+  }
+
+  const getPendingSalaries = () => {
+    return currentSalaries.filter(s => s.status === 'pending').length
+  }
+
+  const getAverageSalary = () => {
+    return currentSalaries.length > 0 ? getTotalSalaryFund() / currentSalaries.length : 0
+  }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white text-lg">Загрузка зарплат...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-semibold text-gray-900">
-              Расчет зарплат
-            </h1>
-            <div className="flex items-center space-x-4">
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              />
-              <Button
-                onClick={handleCalculateSalaries}
-                disabled={isCalculating}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isCalculating ? 'Расчет...' : 'Рассчитать зарплаты'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
+      {/* Navigation */}
+      <Navigation userRole={userRole} onLogout={handleLogout} />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900">Общий фонд зарплат</h3>
-            <p className="text-3xl font-bold text-blue-600">{formatCurrency(getTotalSalaries())}</p>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <div className="flex items-center">
+              <div className="h-12 w-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                <span className="text-2xl">💰</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Общий фонд</h3>
+                <p className="text-3xl font-bold text-green-600">{formatCurrency(getTotalSalaryFund())}</p>
+              </div>
+            </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900">К выплате</h3>
-            <p className="text-3xl font-bold text-green-600">{formatCurrency(getUnpaidSalaries())}</p>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <div className="flex items-center">
+              <div className="h-12 w-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                <span className="text-2xl">👥</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Сотрудников</h3>
+                <p className="text-3xl font-bold text-blue-600">{currentSalaries.length}</p>
+              </div>
+            </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900">Сотрудников</h3>
-            <p className="text-3xl font-bold text-purple-600">{salaries.length}</p>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <div className="flex items-center">
+              <div className="h-12 w-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                <span className="text-2xl">📊</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Средняя зарплата</h3>
+                <p className="text-3xl font-bold text-purple-600">{formatCurrency(getAverageSalary())}</p>
+              </div>
+            </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900">Средняя зарплата</h3>
-            <p className="text-3xl font-bold text-orange-600">
-              {salaries.length > 0 ? formatCurrency(getTotalSalaries() / salaries.length) : '$0'}
-            </p>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <div className="flex items-center">
+              <div className="h-12 w-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg mr-4">
+                <span className="text-2xl">⏳</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">К выплате</h3>
+                <p className="text-3xl font-bold text-orange-600">{getPendingSalaries()}</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Calculation Summary */}
-        {currentCalculation && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Сводка расчета за {new Date(selectedMonth + '-01').toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div>
-                <p className="text-sm text-gray-600">Брутто профит</p>
-                <p className="text-xl font-bold text-green-600">{formatCurrency(currentCalculation.gross_profit)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Расходы</p>
-                <p className="text-xl font-bold text-red-600">{formatCurrency(currentCalculation.total_expenses)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Нетто профит</p>
-                <p className="text-xl font-bold text-blue-600">{formatCurrency(currentCalculation.net_profit)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">База расчета</p>
-                <p className="text-xl font-bold text-purple-600 capitalize">
-                  {currentCalculation.calculation_base === 'gross' ? 'Брутто' : 'Нетто'}
-                </p>
-              </div>
+        {/* Calculate Button */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center">
+                <span className="mr-2">🧮</span>
+                Расчет зарплат
+              </h3>
+              <p className="text-gray-600">Автоматический расчет зарплат на основе прибыли и расходов</p>
             </div>
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                Процент расходов: <span className="font-semibold">{formatPercentage(currentCalculation.expense_percentage)}</span>
-                {currentCalculation.expense_percentage > 20 && (
-                  <span className="ml-2 text-orange-600">(Расчет от нетто профита)</span>
-                )}
-              </p>
-            </div>
+            <Button
+              onClick={handleCalculateSalaries}
+              disabled={isCalculating}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isCalculating ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Расчет...
+                </>
+              ) : (
+                '🧮 Рассчитать зарплаты'
+              )}
+            </Button>
           </div>
-        )}
+        </div>
 
-        {/* Salaries List */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Зарплаты сотрудников</h2>
+        {/* Current Month Salaries */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-white/20 bg-gradient-to-r from-green-50 to-emerald-50">
+            <h2 className="text-lg font-bold text-gray-900">💳 Зарплаты за текущий месяц</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-white/20">
+              <thead className="bg-white/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Сотрудник
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    👤 Сотрудник
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Роль
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    🏷️ Роль
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Базовая зарплата
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    💰 Базовая зарплата
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Бонус за производительность
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    🎁 Бонус
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Бонус лидера
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    💳 Итого
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Итого
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Статус
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    📊 Статус
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {salaries.map((salary) => (
-                  <tr key={salary.id}>
+              <tbody className="bg-white/30 divide-y divide-white/20">
+                {currentSalaries.map((salary) => (
+                  <tr key={salary.id} className="hover:bg-white/50 transition-colors duration-200">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-sm font-medium text-blue-600">
+                          <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
+                            <span className="text-lg font-bold text-white">
                               {salary.employees.users.full_name?.charAt(0) || salary.employees.users.username.charAt(0)}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {salary.employees.users.full_name || 'Не указано'}
+                          <div className="text-sm font-bold text-gray-900">
+                            {salary.employees.users.full_name || salary.employees.users.username}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {salary.employees.users.username}
+                          <div className="text-sm text-gray-600">
+                            @{salary.employees.users.username}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border border-blue-200">
                         {salary.employees.users.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(salary.base_salary)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(salary.performance_bonus)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(salary.leader_bonus)}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-gray-900 bg-white/70 px-3 py-1 rounded-lg inline-block">
+                        {formatCurrency(salary.base_salary)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-green-600">
+                      <div className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg inline-block">
+                        +{formatCurrency(salary.bonus)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg inline-block">
                         {formatCurrency(salary.total_salary)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        salary.is_paid 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
+                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                        salary.status === 'paid' 
+                          ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' 
+                          : 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg'
                       }`}>
-                        {salary.is_paid ? 'Выплачено' : 'К выплате'}
+                        {salary.status === 'paid' ? '✅ Выплачено' : '⏳ Ожидает выплаты'}
                       </span>
                     </td>
                   </tr>
@@ -293,56 +323,85 @@ export default function SalariesPage() {
         </div>
 
         {/* Calculation History */}
-        <div className="bg-white rounded-lg shadow mt-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">История расчетов</h2>
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/20 bg-gradient-to-r from-blue-50 to-purple-50">
+            <h2 className="text-lg font-bold text-gray-900">📊 История расчетов</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-white/20">
+              <thead className="bg-white/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Месяц
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    📅 Месяц
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Брутто профит
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    💰 Общая прибыль
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Расходы
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    💸 Расходы
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Нетто профит
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    📈 Чистая прибыль
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    База расчета
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    💳 Фонд зарплат
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Дата расчета
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    👤 Сотрудников
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    📊 Средняя зарплата
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    👨‍💼 Рассчитал
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {calculations.map((calculation) => (
-                  <tr key={calculation.month}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {new Date(calculation.month + '-01').toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(calculation.gross_profit)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(calculation.total_expenses)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(calculation.net_profit)}
+              <tbody className="bg-white/30 divide-y divide-white/20">
+                {calculations.map((calc) => (
+                  <tr key={calc.id} className="hover:bg-white/50 transition-colors duration-200">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-gray-900">
+                        📅 {new Date(calc.month + '-01').toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 capitalize">
-                        {calculation.calculation_base === 'gross' ? 'Брутто' : 'Нетто'}
-                      </span>
+                      <div className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg inline-block">
+                        {formatCurrency(calc.total_profit)}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(calculation.created_at)}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-red-600 bg-red-50 px-3 py-1 rounded-lg inline-block">
+                        {formatCurrency(calc.total_expenses)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg inline-block">
+                        {formatCurrency(calc.net_profit)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-lg inline-block">
+                        {formatCurrency(calc.total_salary_fund)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-gray-900 bg-white/70 px-3 py-1 rounded-lg inline-block">
+                        {calc.employee_count}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-orange-600 bg-orange-50 px-3 py-1 rounded-lg inline-block">
+                        {formatCurrency(calc.average_salary)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-gray-900">
+                        👨‍💼 {calc.users?.full_name || calc.users?.username || 'Система'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        📅 {formatDate(calc.created_at)}
+                      </div>
                     </td>
                   </tr>
                 ))}
