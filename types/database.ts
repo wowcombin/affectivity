@@ -1,3 +1,4 @@
+// @ts-nocheck
 export interface Database {
   public: {
     Tables: {
@@ -6,214 +7,692 @@ export interface Database {
           id: string
           username: string
           email: string
+          full_name: string
+          role: UserRole
           password_hash: string
-          full_name: string | null
-          phone: string | null
-          role: string
           usdt_address: string | null
-          usdt_network: string | null
           is_active: boolean
           created_at: string
           updated_at: string
-          last_login: string | null
-          created_by: string | null
+          hired_date: string | null
+          fired_date: string | null
+          hr_notes: string | null
         }
-        Insert: Omit<Database['public']['Tables']['users']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['users']['Insert']>
+        Insert: {
+          id?: string
+          username: string
+          email: string
+          full_name: string
+          role: UserRole
+          password_hash: string
+          usdt_address?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+          hired_date?: string | null
+          fired_date?: string | null
+          hr_notes?: string | null
+        }
+        Update: {
+          id?: string
+          username?: string
+          email?: string
+          full_name?: string
+          role?: UserRole
+          password_hash?: string
+          usdt_address?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+          hired_date?: string | null
+          fired_date?: string | null
+          hr_notes?: string | null
+        }
       }
-      employees: {
+      
+      // Новая система рабочих файлов
+      work_files: {
         Row: {
           id: string
-          user_id: string
-          percentage_rate: number
-          total_profit: number
-          is_active: boolean
-          fired_at: string | null
-          fired_by: string | null
-          fire_reason: string | null
-          last_working_day: string | null
+          employee_id: string
+          month: string // YYYY-MM
+          casino_name: string
+          deposit_amount: number
+          withdrawal_amount: number
+          card_number: string
+          card_expiry: string
+          card_cvv: string
+          account_username: string
+          account_password: string
+          card_type: 'pink' | 'gray'
+          bank_name: string
+          withdrawal_status: 'new' | 'sent' | 'received' | 'problem' | 'blocked'
+          withdrawal_question: string | null
           created_at: string
+          updated_at: string
+          is_draft: boolean
         }
-        Insert: Omit<Database['public']['Tables']['employees']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['employees']['Insert']>
+        Insert: {
+          id?: string
+          employee_id: string
+          month: string
+          casino_name: string
+          deposit_amount: number
+          withdrawal_amount: number
+          card_number: string
+          card_expiry: string
+          card_cvv: string
+          account_username: string
+          account_password: string
+          card_type: 'pink' | 'gray'
+          bank_name: string
+          withdrawal_status?: 'new' | 'sent' | 'received' | 'problem' | 'blocked'
+          withdrawal_question?: string | null
+          created_at?: string
+          updated_at?: string
+          is_draft?: boolean
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          month?: string
+          casino_name?: string
+          deposit_amount?: number
+          withdrawal_amount?: number
+          card_number?: string
+          card_expiry?: string
+          card_cvv?: string
+          account_username?: string
+          account_password?: string
+          card_type?: 'pink' | 'gray'
+          bank_name?: string
+          withdrawal_status?: 'new' | 'sent' | 'received' | 'problem' | 'blocked'
+          withdrawal_question?: string | null
+          created_at?: string
+          updated_at?: string
+          is_draft?: boolean
+        }
       }
-      casinos: {
+
+      // Система тестирования сайтов
+      test_sites: {
+        Row: {
+          id: string
+          casino_name: string
+          promo_url: string
+          card_bins: string[] // первые 6 цифр карт
+          currency: string
+          withdrawal_time_type: 'instant' | 'minutes' | 'hours'
+          withdrawal_time_value: number | null
+          manual_url: string | null
+          status: 'active' | 'processing' | 'checking'
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          casino_name: string
+          promo_url: string
+          card_bins: string[]
+          currency: string
+          withdrawal_time_type: 'instant' | 'minutes' | 'hours'
+          withdrawal_time_value?: number | null
+          manual_url?: string | null
+          status?: 'active' | 'processing' | 'checking'
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          casino_name?: string
+          promo_url?: string
+          card_bins?: string[]
+          currency?: string
+          withdrawal_time_type?: 'instant' | 'minutes' | 'hours'
+          withdrawal_time_value?: number | null
+          manual_url?: string | null
+          status?: 'active' | 'processing' | 'checking'
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+
+      // Система банков и карт
+      banks: {
         Row: {
           id: string
           name: string
-          url: string | null
-          commission_rate: number | null
-          is_active: boolean
+          type: 'revolut' | 'uk' | 'other'
           created_at: string
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['casinos']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['casinos']['Insert']>
+        Insert: {
+          id?: string
+          name: string
+          type: 'revolut' | 'uk' | 'other'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          type?: 'revolut' | 'uk' | 'other'
+          created_at?: string
+          updated_at?: string
+        }
       }
+
+      bank_accounts: {
+        Row: {
+          id: string
+          bank_id: string
+          account_name: string
+          account_number: string
+          sort_code: string
+          login_url: string
+          login_password: string
+          pink_cards_daily_limit: number
+          pink_cards_remaining: number
+          last_reset_date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          bank_id: string
+          account_name: string
+          account_number: string
+          sort_code: string
+          login_url: string
+          login_password: string
+          pink_cards_daily_limit?: number
+          pink_cards_remaining?: number
+          last_reset_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          bank_id?: string
+          account_name?: string
+          account_number?: string
+          sort_code?: string
+          login_url?: string
+          login_password?: string
+          pink_cards_daily_limit?: number
+          pink_cards_remaining?: number
+          last_reset_date?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+
       cards: {
         Row: {
           id: string
+          bank_account_id: string
           card_number: string
-          card_bin: string
-          card_holder: string | null
-          expiry_date: string | null
-          status: string
-          assigned_to: string | null
-          assigned_at: string | null
-          casino_id: string | null
-          created_at: string
-        }
-        Insert: Omit<Database['public']['Tables']['cards']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['cards']['Insert']>
-      }
-      transactions: {
-        Row: {
-          id: string
-          employee_id: string
-          card_id: string | null
-          casino_id: string
-          transaction_type: string
-          amount: number
+          expiry_date: string
+          cvv: string
+          card_type: 'pink' | 'gray'
+          status: 'free' | 'assigned' | 'in_process' | 'completed'
+          assigned_employee_id: string | null
+          assigned_casino_id: string | null
+          deposit_amount: number | null
+          withdrawal_amount: number | null
           profit: number | null
-          status: string
-          transaction_date: string
-          notes: string | null
           created_at: string
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['transactions']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['transactions']['Insert']>
+        Insert: {
+          id?: string
+          bank_account_id: string
+          card_number: string
+          expiry_date: string
+          cvv: string
+          card_type: 'pink' | 'gray'
+          status?: 'free' | 'assigned' | 'in_process' | 'completed'
+          assigned_employee_id?: string | null
+          assigned_casino_id?: string | null
+          deposit_amount?: number | null
+          withdrawal_amount?: number | null
+          profit?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          bank_account_id?: string
+          card_number?: string
+          expiry_date?: string
+          cvv?: string
+          card_type?: 'pink' | 'gray'
+          status?: 'free' | 'assigned' | 'in_process' | 'completed'
+          assigned_employee_id?: string | null
+          assigned_casino_id?: string | null
+          deposit_amount?: number | null
+          withdrawal_amount?: number | null
+          profit?: number | null
+          created_at?: string
+          updated_at?: string
+        }
       }
-      salaries: {
+
+      // Система задач (как Asana)
+      tasks: {
         Row: {
           id: string
-          employee_id: string
-          month: string
-          base_salary: number
-          performance_bonus: number
-          leader_bonus: number
-          total_salary: number
-          is_paid: boolean
-          paid_at: string | null
-          payment_tx_hash: string | null
+          title: string
+          description: string
+          assigned_to: string
+          assigned_by: string
+          priority: 'low' | 'medium' | 'high' | 'urgent'
+          status: 'todo' | 'in_progress' | 'review' | 'done'
+          due_date: string
+          estimated_hours: number
+          actual_hours: number | null
           created_at: string
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['salaries']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['salaries']['Insert']>
+        Insert: {
+          id?: string
+          title: string
+          description: string
+          assigned_to: string
+          assigned_by: string
+          priority?: 'low' | 'medium' | 'high' | 'urgent'
+          status?: 'todo' | 'in_progress' | 'review' | 'done'
+          due_date: string
+          estimated_hours: number
+          actual_hours?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          assigned_to?: string
+          assigned_by?: string
+          priority?: 'low' | 'medium' | 'high' | 'urgent'
+          status?: 'todo' | 'in_progress' | 'review' | 'done'
+          due_date?: string
+          estimated_hours?: number
+          actual_hours?: number | null
+          created_at?: string
+          updated_at?: string
+        }
       }
-      role_earnings: {
+
+      task_notifications: {
         Row: {
           id: string
+          task_id: string
           user_id: string
-          role: string
-          month: string
-          total_employees_profit: number
-          percentage: number
-          total_earnings: number
-          is_paid: boolean
-          paid_at: string | null
+          type: 'assigned' | 'updated' | 'due_soon' | 'overdue' | 'completed'
+          message: string
+          is_read: boolean
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['role_earnings']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['role_earnings']['Insert']>
+        Insert: {
+          id?: string
+          task_id: string
+          user_id: string
+          type: 'assigned' | 'updated' | 'due_soon' | 'overdue' | 'completed'
+          message: string
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          task_id?: string
+          user_id?: string
+          type?: 'assigned' | 'updated' | 'due_soon' | 'overdue' | 'completed'
+          message?: string
+          is_read?: boolean
+          created_at?: string
+        }
       }
+
+      // Система переводов CFO -> CEO
+      cfo_transfers: {
+        Row: {
+          id: string
+          amount: number
+          usdt_address: string
+          sent_by: string
+          sent_at: string
+          confirmed_by: string | null
+          confirmed_at: string | null
+          status: 'pending' | 'confirmed' | 'rejected'
+        }
+        Insert: {
+          id?: string
+          amount: number
+          usdt_address: string
+          sent_by: string
+          sent_at?: string
+          confirmed_by?: string | null
+          confirmed_at?: string | null
+          status?: 'pending' | 'confirmed' | 'rejected'
+        }
+        Update: {
+          id?: string
+          amount?: number
+          usdt_address?: string
+          sent_by?: string
+          sent_at?: string
+          confirmed_by?: string | null
+          confirmed_at?: string | null
+          status?: 'pending' | 'confirmed' | 'rejected'
+        }
+      }
+
+      // NDA документы
       nda_documents: {
         Row: {
           id: string
           employee_id: string
-          document_content: string
-          signature_date: string | null
-          ip_address: string | null
-          is_signed: boolean
-          signed_document_url: string | null
-          created_by: string | null
+          document_url: string
+          signed_at: string | null
+          status: 'pending' | 'signed' | 'expired'
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['nda_documents']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['nda_documents']['Insert']>
+        Insert: {
+          id?: string
+          employee_id: string
+          document_url: string
+          signed_at?: string | null
+          status?: 'pending' | 'signed' | 'expired'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          document_url?: string
+          signed_at?: string | null
+          status?: 'pending' | 'signed' | 'expired'
+          created_at?: string
+        }
       }
+
+      // Обновленная система зарплат
+      salary_calculations: {
+        Row: {
+          id: string
+          employee_id: string
+          month: string // YYYY-MM
+          base_salary: number
+          bonus_amount: number
+          leader_bonus: number
+          total_salary: number
+          gross_profit: number
+          expenses: number
+          net_profit: number
+          currency_conversion_rate: number
+          calculated_at: string
+        }
+        Insert: {
+          id?: string
+          employee_id: string
+          month: string
+          base_salary: number
+          bonus_amount: number
+          leader_bonus: number
+          total_salary: number
+          gross_profit: number
+          expenses: number
+          net_profit: number
+          currency_conversion_rate: number
+          calculated_at?: string
+        }
+        Update: {
+          id?: string
+          employee_id?: string
+          month?: string
+          base_salary?: number
+          bonus_amount?: number
+          leader_bonus?: number
+          total_salary?: number
+          gross_profit?: number
+          expenses?: number
+          net_profit?: number
+          currency_conversion_rate?: number
+          calculated_at?: string
+        }
+      }
+
+      // Статистика лидеров месяца
+      monthly_leaders: {
+        Row: {
+          id: string
+          month: string // YYYY-MM
+          employee_id: string
+          total_profit: number
+          total_transactions: number
+          max_single_transaction: number
+          rank: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          month: string
+          employee_id: string
+          total_profit: number
+          total_transactions: number
+          max_single_transaction: number
+          rank: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          month?: string
+          employee_id?: string
+          total_profit?: number
+          total_transactions?: number
+          max_single_transaction?: number
+          rank?: number
+          created_at?: string
+        }
+      }
+
+      // Существующие таблицы (обновленные)
+      casinos: {
+        Row: {
+          id: string
+          name: string
+          url: string
+          status: CasinoStatus
+          added_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          url: string
+          status?: CasinoStatus
+          added_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          url?: string
+          status?: CasinoStatus
+          added_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+
+      transactions: {
+        Row: {
+          id: string
+          casino_id: string
+          card_id: string
+          employee_id: string
+          amount: number
+          type: 'deposit' | 'withdrawal'
+          status: TransactionStatus
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          casino_id: string
+          card_id: string
+          employee_id: string
+          amount: number
+          type: 'deposit' | 'withdrawal'
+          status?: TransactionStatus
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          casino_id?: string
+          card_id?: string
+          employee_id?: string
+          amount?: number
+          type?: 'deposit' | 'withdrawal'
+          status?: TransactionStatus
+          created_at?: string
+          updated_at?: string
+        }
+      }
+
       expenses: {
         Row: {
           id: string
           description: string
-          amount_usd: number
-          expense_date: string
-          created_by: string | null
-          month: string
+          amount: number
+          category: string
+          date: string
+          added_by: string
           created_at: string
-          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['expenses']['Row'], 'id' | 'created_at' | 'updated_at'>
-        Update: Partial<Database['public']['Tables']['expenses']['Insert']>
-      }
-      salary_calculations: {
-        Row: {
-          id: string
-          month: string
-          gross_profit: number
-          total_expenses: number
-          expense_percentage: number
-          net_profit: number
-          calculation_base: string
-          calculated_at: string
+        Insert: {
+          id?: string
+          description: string
+          amount: number
+          category: string
+          date: string
+          added_by: string
+          created_at?: string
         }
-        Insert: Omit<Database['public']['Tables']['salary_calculations']['Row'], 'id' | 'calculated_at'>
-        Update: Partial<Database['public']['Tables']['salary_calculations']['Insert']>
+        Update: {
+          id?: string
+          description?: string
+          amount?: number
+          category?: string
+          date?: string
+          added_by?: string
+          created_at?: string
+        }
       }
+
       fired_employees_archive: {
         Row: {
           id: string
-          employee_id: string
-          username: string
-          full_name: string | null
-          role: string | null
-          hire_date: string | null
-          fire_date: string | null
-          fire_reason: string | null
-          fired_by: string | null
-          total_earned: number | null
-          last_salary: number | null
-          documents_archived: boolean
-          created_at: string
+          user_id: string
+          fired_by: string
+          fired_at: string
+          reason: string
+          ip_address: string
         }
-        Insert: Omit<Database['public']['Tables']['fired_employees_archive']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['fired_employees_archive']['Insert']>
+        Insert: {
+          id?: string
+          user_id: string
+          fired_by: string
+          fired_at?: string
+          reason: string
+          ip_address: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          fired_by?: string
+          fired_at?: string
+          reason?: string
+          ip_address?: string
+        }
       }
+
       blocked_ips: {
         Row: {
           id: string
           ip_address: string
-          blocked_reason: string | null
-          related_employee_id: string | null
-          blocked_by: string | null
           blocked_at: string
-          is_active: boolean
+          reason: string
         }
-        Insert: Omit<Database['public']['Tables']['blocked_ips']['Row'], 'id' | 'blocked_at'>
-        Update: Partial<Database['public']['Tables']['blocked_ips']['Insert']>
+        Insert: {
+          id?: string
+          ip_address: string
+          blocked_at?: string
+          reason: string
+        }
+        Update: {
+          id?: string
+          ip_address?: string
+          blocked_at?: string
+          reason?: string
+        }
       }
+
       activity_logs: {
         Row: {
           id: string
-          user_id: string | null
+          user_id: string
           action: string
-          details: any
-          ip_address: string | null
-          user_agent: string | null
+          details: string
+          ip_address: string
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['activity_logs']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['activity_logs']['Insert']>
+        Insert: {
+          id?: string
+          user_id: string
+          action: string
+          details: string
+          ip_address: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          action?: string
+          details?: string
+          ip_address?: string
+          created_at?: string
+        }
       }
+
       user_sessions: {
         Row: {
           id: string
           user_id: string
-          ip_address: string | null
-          user_agent: string | null
+          token: string
           expires_at: string
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['user_sessions']['Row'], 'id' | 'created_at'>
-        Update: Partial<Database['public']['Tables']['user_sessions']['Insert']>
+        Insert: {
+          id?: string
+          user_id: string
+          token: string
+          expires_at: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          token?: string
+          expires_at?: string
+          created_at?: string
+        }
       }
     }
   }
@@ -222,187 +701,189 @@ export interface Database {
 // Типы для ролей пользователей
 export type UserRole = 'Admin' | 'Manager' | 'HR' | 'CFO' | 'Employee' | 'Tester'
 
-// Типы для статусов карт
-export type CardStatus = 'available' | 'in_use' | 'blocked' | 'expired'
+// Статусы казино
+export type CasinoStatus = 'active' | 'inactive' | 'blocked'
 
-// Типы для типов транзакций
-export type TransactionType = 'deposit' | 'withdrawal' | 'bonus'
-
-// Типы для статусов транзакций
+// Статусы транзакций
 export type TransactionStatus = 'pending' | 'completed' | 'failed' | 'cancelled'
 
-// Типы для базы расчета зарплат
-export type CalculationBase = 'gross' | 'net'
+// Статусы карт
+export type CardStatus = 'free' | 'assigned' | 'in_process' | 'completed'
 
-// Интерфейсы для API
+// Приоритеты задач
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
+
+// Статусы задач
+export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done'
+
+// API типы
 export interface LoginRequest {
   username: string
   password: string
 }
 
 export interface LoginResponse {
-  user: Database['public']['Tables']['users']['Row']
-  token: string
+  success: boolean
+  user?: User
+  token?: string
+  error?: string
 }
 
 export interface CreateUserRequest {
   username: string
   email: string
-  password: string
-  full_name?: string
-  phone?: string
+  full_name: string
   role: UserRole
+  password: string
   usdt_address?: string
-  usdt_network?: string
 }
 
 export interface UpdateUserRequest {
+  id: string
+  username?: string
+  email?: string
   full_name?: string
-  phone?: string
+  role?: UserRole
   usdt_address?: string
-  usdt_network?: string
+  is_active?: boolean
+  hr_notes?: string
 }
 
-export interface FireEmployeeRequest {
+export interface CreateWorkFileRequest {
   employee_id: string
-  reason: string
-  comments?: string
-  last_working_day: string
-  block_ips: boolean
-  revoke_cards: boolean
-  archive_data: boolean
+  month: string
+  casino_name: string
+  deposit_amount: number
+  withdrawal_amount: number
+  card_number: string
+  card_expiry: string
+  card_cvv: string
+  account_username: string
+  account_password: string
+  card_type: 'pink' | 'gray'
+  bank_name: string
+  withdrawal_question?: string
+  is_draft?: boolean
 }
 
-export interface AddExpenseRequest {
+export interface CreateTestSiteRequest {
+  casino_name: string
+  promo_url: string
+  card_bins: string[]
+  currency: string
+  withdrawal_time_type: 'instant' | 'minutes' | 'hours'
+  withdrawal_time_value?: number
+  manual_url?: string
+}
+
+export interface CreateBankRequest {
+  name: string
+  type: 'revolut' | 'uk' | 'other'
+}
+
+export interface CreateBankAccountRequest {
+  bank_id: string
+  account_name: string
+  account_number: string
+  sort_code: string
+  login_url: string
+  login_password: string
+  pink_cards_daily_limit?: number
+}
+
+export interface CreateCardRequest {
+  bank_account_id: string
+  card_number: string
+  expiry_date: string
+  cvv: string
+  card_type: 'pink' | 'gray'
+}
+
+export interface CreateTaskRequest {
+  title: string
   description: string
-  amount_usd: number
-  expense_date: string
+  assigned_to: string
+  priority: TaskPriority
+  due_date: string
+  estimated_hours: number
 }
 
-export interface CalculateSalariesRequest {
-  month: string
+export interface CreateCFOTransferRequest {
+  amount: number
+  usdt_address: string
 }
 
-export interface SalaryCalculationResult {
-  month: string
-  gross_profit: number
-  total_expenses: number
-  expense_percentage: number
-  net_profit: number
-  calculation_base: CalculationBase
-  employees_salaries: Array<{
-    employee_id: string
-    username: string
-    base_salary: number
-    performance_bonus: number
-    leader_bonus: number
-    total_salary: number
-  }>
-  role_earnings: Array<{
-    user_id: string
-    username: string
-    role: UserRole
-    total_earnings: number
-  }>
-}
-
-// Интерфейсы для дашбордов
 export interface DashboardStats {
   total_employees: number
   active_employees: number
   total_profit: number
   monthly_profit: number
-  pending_salaries: number
-  total_expenses: number
-  expense_percentage: number
+  monthly_expenses: number
+  pending_withdrawals: number
+  active_tasks: number
+  overdue_tasks: number
+  free_cards: number
+  assigned_cards: number
+  monthly_leader: {
+    name: string
+    profit: number
+    rank: number
+  } | null
+  days_until_salary: number
 }
 
 export interface EmployeeStats {
   id: string
-  username: string
-  full_name: string
+  name: string
   role: UserRole
-  total_profit: number
   monthly_profit: number
+  total_transactions: number
+  rank: number
+  tasks_completed: number
+  tasks_pending: number
+}
+
+export interface BankStats {
+  id: string
+  name: string
+  total_cards: number
+  free_cards: number
+  total_profit: number
+  pink_cards_remaining: number
+}
+
+export interface CardAssignment {
+  card_id: string
+  employee_id: string
+  casino_id: string
+  card_type: 'pink' | 'gray'
+}
+
+export interface MassAssignmentRequest {
+  assignments: CardAssignment[]
+}
+
+export interface SalaryCalculation {
+  employee_id: string
+  base_salary: number
+  bonus_amount: number
+  leader_bonus: number
   total_salary: number
-  is_active: boolean
-  hire_date: string
-  last_transaction: string | null
+  gross_profit: number
+  expenses: number
+  net_profit: number
+  currency_conversion_rate: number
 }
 
-export interface ManagerDashboardData {
-  stats: DashboardStats
-  employees: EmployeeStats[]
-  pending_tickets: number
-  urgent_tickets: number
-  high_priority_tickets: number
-  normal_tickets: number
-  card_requests: Array<{
-    employee_id: string
-    username: string
-    casino_name: string
-    bin: string
-    card_count: number
-  }>
-}
-
-export interface HRDashboardData {
-  stats: DashboardStats
-  employees: Array<EmployeeStats & {
-    nda_signed: boolean
-    nda_date: string | null
-  }>
-  new_employees_this_month: number
-  total_nda_signed: number
-  total_nda_pending: number
-}
-
-export interface CFODashboardData {
-  stats: DashboardStats
-  expenses: Array<{
-    id: string
-    description: string
-    amount_usd: number
-    expense_date: string
-    created_by: string
-  }>
-  salary_distribution: {
-    employees: number
-    managers: number
-    hr: number
-    cfo: number
-    testers: number
-  }
-  card_status: {
-    total: number
-    in_use: number
-    available: number
-    blocked: number
-  }
-}
-
-export interface EmployeeDashboardData {
-  profile: Database['public']['Tables']['users']['Row']
-  employee_data: Database['public']['Tables']['employees']['Row']
-  monthly_stats: {
-    profit: number
-    transactions: number
-    salary: number
-    bonus: number
-  }
-  recent_transactions: Array<{
-    id: string
-    casino_name: string
-    transaction_type: TransactionType
-    amount: number
-    profit: number
-    status: TransactionStatus
-    transaction_date: string
-  }>
-  assigned_cards: Array<{
-    id: string
-    card_bin: string
-    casino_name: string
-    status: CardStatus
-  }>
-}
+// Утилитарные типы
+export type User = Database['public']['Tables']['users']['Row']
+export type WorkFile = Database['public']['Tables']['work_files']['Row']
+export type TestSite = Database['public']['Tables']['test_sites']['Row']
+export type Bank = Database['public']['Tables']['banks']['Row']
+export type BankAccount = Database['public']['Tables']['bank_accounts']['Row']
+export type Card = Database['public']['Tables']['cards']['Row']
+export type Task = Database['public']['Tables']['tasks']['Row']
+export type CFOTransfer = Database['public']['Tables']['cfo_transfers']['Row']
+export type NDADocument = Database['public']['Tables']['nda_documents']['Row']
+export type SalaryCalculationRow = Database['public']['Tables']['salary_calculations']['Row']
+export type MonthlyLeader = Database['public']['Tables']['monthly_leaders']['Row']

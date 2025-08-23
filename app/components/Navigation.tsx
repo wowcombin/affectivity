@@ -34,43 +34,54 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
   const roleNavigation = {
     'HR': [
       { name: 'Сотрудники', href: '/employees', icon: '👥' },
+      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
+      { name: 'NDA документы', href: '/nda-documents', icon: '📄' },
+      { name: 'Задачи', href: '/tasks', icon: '✅' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Manager': [
-      { name: 'Казино', href: '/casinos', icon: '🎰' },
-      { name: 'Банкир → CEO', href: '/banker-transactions', icon: '💸' },
-      { name: 'Тестирование', href: '/site-testing', icon: '🧪' },
-      { name: 'Транзакции', href: '/transactions', icon: '📊' },
-      { name: 'Карты', href: '/cards', icon: '💳' },
+      { name: 'Сотрудники', href: '/employees', icon: '👥' },
+      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
+      { name: 'Проверка выводов', href: '/withdrawal-checks', icon: '🔍' },
+      { name: 'Задачи', href: '/tasks', icon: '✅' },
+      { name: 'Назначение карт', href: '/card-assignments', icon: '💳' },
+      { name: 'Статистика', href: '/statistics', icon: '📊' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'CFO': [
-      { name: 'Расходы', href: '/expenses', icon: '💰' },
-      { name: 'Зарплаты', href: '/salaries', icon: '💳' },
-      { name: 'Банкир → CEO', href: '/banker-transactions', icon: '💸' },
-      { name: 'Транзакции', href: '/transactions', icon: '📊' },
-      { name: 'Профиль', href: '/profile', icon: '👤' }
-    ],
-    'CEO': [
-      { name: 'Банкир → CEO', href: '/banker-transactions', icon: '💸' },
+      { name: 'Расходы', href: '/expenses', icon: '💸' },
+      { name: 'Банки', href: '/banks', icon: '🏦' },
+      { name: 'Карты', href: '/cards', icon: '💳' },
+      { name: 'Переводы CEO', href: '/cfo-transfers', icon: '💰' },
+      { name: 'Зарплаты', href: '/salaries', icon: '💵' },
+      { name: 'Инвентаризация', href: '/inventory', icon: '📦' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Tester': [
-      { name: 'Тестирование', href: '/site-testing', icon: '🧪' },
+      { name: 'Тестовые сайты', href: '/test-sites', icon: '🧪' },
+      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
+      { name: 'Активные сайты', href: '/active-sites', icon: '🌐' },
+      { name: 'Задачи', href: '/tasks', icon: '✅' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Employee': [
+      { name: 'Мой рабочий файл', href: '/my-work-file', icon: '📋' },
+      { name: 'Мои задачи', href: '/my-tasks', icon: '✅' },
+      { name: 'Моя статистика', href: '/my-stats', icon: '📊' },
+      { name: 'Лидеры месяца', href: '/monthly-leaders', icon: '🏆' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Admin': [
       { name: 'Сотрудники', href: '/employees', icon: '👥' },
-      { name: 'Казино', href: '/casinos', icon: '🎰' },
-      { name: 'Банкир → CEO', href: '/banker-transactions', icon: '💸' },
-      { name: 'Тестирование', href: '/site-testing', icon: '🧪' },
-      { name: 'Расходы', href: '/expenses', icon: '💰' },
-      { name: 'Зарплаты', href: '/salaries', icon: '💳' },
-      { name: 'Транзакции', href: '/transactions', icon: '📊' },
+      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
+      { name: 'Тестовые сайты', href: '/test-sites', icon: '🧪' },
+      { name: 'Банки', href: '/banks', icon: '🏦' },
       { name: 'Карты', href: '/cards', icon: '💳' },
+      { name: 'Задачи', href: '/tasks', icon: '✅' },
+      { name: 'Переводы CFO', href: '/cfo-transfers', icon: '💰' },
+      { name: 'Зарплаты', href: '/salaries', icon: '💵' },
+      { name: 'Статистика', href: '/statistics', icon: '📊' },
+      { name: 'Система', href: '/system', icon: '⚙️' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ]
   }
@@ -118,7 +129,6 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
                         {role === 'HR' ? '👥' : 
                          role === 'Manager' ? '👨‍💼' : 
                          role === 'CFO' ? '💰' : 
-                         role === 'CEO' ? '👑' : 
                          role === 'Tester' ? '🧪' : 
                          role === 'Employee' ? '👤' : 
                          role === 'Admin' ? '⚡' : '👤'}
