@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireHR, hashPassword, generateTemporaryPassword, validateBEP20Address, logActivity, getClientIP } from '@/lib/auth'

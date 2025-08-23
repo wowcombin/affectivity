@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/app/components/Button'
 import { formatCurrency, formatDate, formatPercentage } from '@/lib/utils'
 import { toast } from 'sonner'
 

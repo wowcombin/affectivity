@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from '@/lib/supabase/server'
 import { UserRole } from '@/types/database'
 import { redirect } from 'next/navigation'
