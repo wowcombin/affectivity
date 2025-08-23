@@ -34,6 +34,18 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       roles: ['Admin', 'Manager']
     },
     {
+      name: 'Банкир → CEO',
+      href: '/banker-transactions',
+      icon: '💸',
+      roles: ['Admin', 'Manager', 'CFO', 'CEO']
+    },
+    {
+      name: 'Тестирование',
+      href: '/site-testing',
+      icon: '🧪',
+      roles: ['Admin', 'Manager', 'Tester']
+    },
+    {
       name: 'Расходы',
       href: '/expenses',
       icon: '💰',
