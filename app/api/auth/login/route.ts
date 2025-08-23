@@ -1,5 +1,4 @@
 // @ts-nocheck
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyPassword, generateToken, logActivity, getClientIP } from '@/lib/auth'
@@ -18,6 +17,8 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
     const clientIP = getClientIP(request)
     
+    console.log('Login attempt for username:', username)
+    
     // Получаем пользователя по username
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -26,8 +27,10 @@ export async function POST(request: NextRequest) {
       .eq('is_active', true)
       .single()
 
+    console.log('User query result:', { user, userError })
+
     if (userError || !user) {
-      await logActivity(null, 'login_failed', { username, reason: 'user_not_found' }, clientIP || undefined, request.headers.get('user-agent') || undefined)
+      console.log('User not found or error:', userError)
       return NextResponse.json(
         { error: 'Неверное имя пользователя или пароль' },
         { status: 401 }
@@ -36,9 +39,10 @@ export async function POST(request: NextRequest) {
 
     // Проверяем пароль
     const isValidPassword = await verifyPassword(password, user.password_hash)
+    console.log('Password validation result:', isValidPassword)
     
     if (!isValidPassword) {
-      await logActivity(null, 'login_failed', { username, reason: 'invalid_password' }, clientIP || undefined, request.headers.get('user-agent') || undefined)
+      console.log('Invalid password for user:', username)
       return NextResponse.json(
         { error: 'Неверное имя пользователя или пароль' },
         { status: 401 }
@@ -58,21 +62,9 @@ export async function POST(request: NextRequest) {
       role: user.role
     })
 
-    // Логируем успешный вход
-    await logActivity(user.id, 'login_success', { username }, clientIP || undefined, request.headers.get('user-agent') || undefined)
+    console.log('Login successful for user:', username)
 
-    // Создаем сессию в Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password: password // Используем оригинальный пароль для Supabase Auth
-    })
-
-    if (authError) {
-      console.error('Supabase auth error:', authError)
-      // Продолжаем без Supabase Auth, используя наш JWT
-    }
-
-    return NextResponse.json({
+    const response = {
       user: {
         id: user.id,
         username: user.username,
@@ -83,7 +75,11 @@ export async function POST(request: NextRequest) {
         usdt_network: user.usdt_network
       },
       token
-    })
+    }
+
+    console.log('Sending response:', response)
+
+    return NextResponse.json(response)
 
   } catch (error) {
     console.error('Login error:', error)
