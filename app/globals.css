@@ -169,3 +169,21 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Ensure dropdowns are always on top */
+.dropdown-container {
+  position: relative;
+  z-index: 999999;
+}
+
+.employee-selector {
+  position: relative;
+  z-index: 999999;
+}
+
+/* Force dropdowns to be above everything */
+.dropdown-container .absolute,
+.employee-selector .absolute {
+  position: fixed !important;
+  z-index: 999999 !important;
+}
