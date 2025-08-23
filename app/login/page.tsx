@@ -34,9 +34,6 @@ export default function LoginPage() {
       localStorage.setItem('auth-token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
 
-      // Сохраняем токен в cookie для middleware
-      document.cookie = `auth-token=${data.token}; path=/; max-age=604800; secure; samesite=strict`
-
       toast.success('Успешный вход в систему!')
       
       // Перенаправляем на главную страницу

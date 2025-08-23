@@ -79,7 +79,18 @@ export async function POST(request: NextRequest) {
 
     console.log('Sending response:', response)
 
-    return NextResponse.json(response)
+    const nextResponse = NextResponse.json(response)
+    
+    // Устанавливаем cookie
+    nextResponse.cookies.set('auth-token', token, {
+      httpOnly: false,
+      secure: false, // false для локальной разработки
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 дней
+      path: '/'
+    })
+
+    return nextResponse
 
   } catch (error) {
     console.error('Login error:', error)

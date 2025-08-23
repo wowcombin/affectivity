@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import jwt from 'jsonwebtoken'
 
 export async function middleware(request: NextRequest) {
   // Пропускаем API запросы
@@ -12,39 +11,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Проверяем JWT токен из Authorization header или localStorage (через cookie)
-  const authHeader = request.headers.get('authorization')
+  // Проверяем JWT токен из cookie
   const authCookie = request.cookies.get('auth-token')?.value
   
-  let token = null
-  
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7)
-  } else if (authCookie) {
-    token = authCookie
-  }
+  console.log('Middleware - Path:', request.nextUrl.pathname)
+  console.log('Middleware - Auth cookie:', authCookie ? 'Present' : 'Not found')
 
   // Если нет токена, перенаправляем на логин
-  if (!token) {
+  if (!authCookie) {
+    console.log('Middleware - No token, redirecting to login')
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  try {
-    // Проверяем токен
-    const decoded = jwt.verify(token, process.env.SUPABASE_JWT_SECRET!)
-    
-    if (!decoded) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-
-    // Токен валиден, пропускаем запрос
-    return NextResponse.next()
-    
-  } catch (error) {
-    // Токен невалиден, перенаправляем на логин
-    console.error('JWT verification failed:', error)
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+  // Токен есть, пропускаем запрос
+  console.log('Middleware - Token found, allowing access')
+  return NextResponse.next()
 }
 
 export const config = {
