@@ -28,6 +28,12 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       roles: ['Admin', 'HR']
     },
     {
+      name: 'Казино',
+      href: '/casinos',
+      icon: '🎰',
+      roles: ['Admin', 'Manager']
+    },
+    {
       name: 'Расходы',
       href: '/expenses',
       icon: '💰',

@@ -275,14 +275,14 @@ export default function ProfilePage() {
                   </div>
                   
                   <div className="flex space-x-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsEditing(false)}
-                      className="flex-1 px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300"
-                    >
-                      ❌ Отмена
-                    </Button>
+                                                <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setIsEditing(false)}
+                              className="flex-1 px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900"
+                            >
+                              ❌ Отмена
+                            </Button>
                     <Button 
                       type="submit"
                       disabled={!validateBEP20Address(formData.usdt_address)}

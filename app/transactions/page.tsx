@@ -52,50 +52,14 @@ export default function TransactionsPage() {
 
   const loadTransactions = async () => {
     try {
-      // Здесь будет API для загрузки транзакций
-      // Пока используем моковые данные
-      const mockTransactions: Transaction[] = [
-        {
-          id: '1',
-          amount_usd: 150.00,
-          transaction_type: 'deposit',
-          status: 'completed',
-          casino_id: '1',
-          card_id: '1',
-          employee_id: '1',
-          created_at: new Date().toISOString(),
-          casinos: { name: 'Casino Royal', url: 'https://casinoroyal.com' },
-          cards: { card_number: '****1234', card_type: 'visa' },
-          employees: { users: { username: 'john_doe', full_name: 'John Doe' } }
-        },
-        {
-          id: '2',
-          amount_usd: 75.50,
-          transaction_type: 'withdrawal',
-          status: 'pending',
-          casino_id: '2',
-          card_id: '2',
-          employee_id: '2',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          casinos: { name: 'Lucky Stars', url: 'https://luckystars.com' },
-          cards: { card_number: '****5678', card_type: 'mastercard' },
-          employees: { users: { username: 'jane_smith', full_name: 'Jane Smith' } }
-        },
-        {
-          id: '3',
-          amount_usd: 200.00,
-          transaction_type: 'deposit',
-          status: 'failed',
-          casino_id: '3',
-          card_id: '3',
-          employee_id: '3',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          casinos: { name: 'Golden Palace', url: 'https://goldenpalace.com' },
-          cards: { card_number: '****9012', card_type: 'visa' },
-          employees: { users: { username: 'mike_wilson', full_name: 'Mike Wilson' } }
-        }
-      ]
-      setTransactions(mockTransactions)
+      const response = await fetch('/api/transactions')
+      if (response.ok) {
+        const data = await response.json()
+        setTransactions(data.transactions)
+      } else {
+        console.error('Failed to load transactions')
+        toast.error('Ошибка загрузки транзакций')
+      }
     } catch (error) {
       console.error('Error loading transactions:', error)
       toast.error('Ошибка загрузки транзакций')

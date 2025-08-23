@@ -60,53 +60,14 @@ export default function CardsPage() {
 
   const loadCards = async () => {
     try {
-      // Здесь будет API для загрузки карт
-      // Пока используем моковые данные
-      const mockCards: Card[] = [
-        {
-          id: '1',
-          card_number: '****1234',
-          card_type: 'visa',
-          expiry_date: '12/25',
-          cvv: '123',
-          balance_usd: 1500.00,
-          status: 'active',
-          casino_id: '1',
-          employee_id: '1',
-          created_at: new Date().toISOString(),
-          casinos: { name: 'Casino Royal', url: 'https://casinoroyal.com' },
-          employees: { users: { username: 'john_doe', full_name: 'John Doe' } }
-        },
-        {
-          id: '2',
-          card_number: '****5678',
-          card_type: 'mastercard',
-          expiry_date: '08/26',
-          cvv: '456',
-          balance_usd: 750.50,
-          status: 'active',
-          casino_id: '2',
-          employee_id: '2',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          casinos: { name: 'Lucky Stars', url: 'https://luckystars.com' },
-          employees: { users: { username: 'jane_smith', full_name: 'Jane Smith' } }
-        },
-        {
-          id: '3',
-          card_number: '****9012',
-          card_type: 'visa',
-          expiry_date: '03/24',
-          cvv: '789',
-          balance_usd: 0.00,
-          status: 'expired',
-          casino_id: '3',
-          employee_id: '3',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          casinos: { name: 'Golden Palace', url: 'https://goldenpalace.com' },
-          employees: { users: { username: 'mike_wilson', full_name: 'Mike Wilson' } }
-        }
-      ]
-      setCards(mockCards)
+      const response = await fetch('/api/cards')
+      if (response.ok) {
+        const data = await response.json()
+        setCards(data.cards)
+      } else {
+        console.error('Failed to load cards')
+        toast.error('Ошибка загрузки карт')
+      }
     } catch (error) {
       console.error('Error loading cards:', error)
       toast.error('Ошибка загрузки карт')
@@ -119,19 +80,36 @@ export default function CardsPage() {
     e.preventDefault()
     
     try {
-      // Здесь будет API для добавления карты
-      toast.success('Карта успешно добавлена!')
-      setShowAddForm(false)
-      setFormData({
-        card_number: '',
-        card_type: 'visa',
-        expiry_date: '',
-        cvv: '',
-        balance_usd: '',
-        casino_id: '',
-        employee_id: ''
+      const response = await fetch('/api/cards', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          balance_usd: parseFloat(formData.balance_usd) || 0,
+          casino_id: '1', // Временно используем ID 1
+          employee_id: '1' // Временно используем ID 1
+        }),
       })
-      loadCards()
+
+      if (response.ok) {
+        toast.success('Карта успешно добавлена!')
+        setShowAddForm(false)
+        setFormData({
+          card_number: '',
+          card_type: 'visa',
+          expiry_date: '',
+          cvv: '',
+          balance_usd: '',
+          casino_id: '',
+          employee_id: ''
+        })
+        loadCards()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Ошибка добавления карты')
+      }
     } catch (error) {
       console.error('Error adding card:', error)
       toast.error('Ошибка добавления карты')
@@ -515,7 +493,7 @@ export default function CardsPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setShowAddForm(false)}
-                    className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300"
+                    className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900"
                   >
                     ❌ Отмена
                   </Button>
