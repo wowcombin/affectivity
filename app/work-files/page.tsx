@@ -105,7 +105,8 @@ export default function WorkFilesPage() {
       }
     } catch (error) {
       console.error('Error loading work files:', error)
-      toast.error('Ошибка загрузки рабочих файлов: ' + error.message)
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка'
+      toast.error('Ошибка загрузки рабочих файлов: ' + errorMessage)
     } finally {
       setIsLoading(false)
     }

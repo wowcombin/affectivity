@@ -160,7 +160,8 @@ export default function BanksPage() {
       }
     } catch (error) {
       console.error('Error loading data:', error)
-      toast.error('Ошибка загрузки данных: ' + error.message)
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка'
+      toast.error('Ошибка загрузки данных: ' + errorMessage)
     } finally {
       setIsLoading(false)
     }
