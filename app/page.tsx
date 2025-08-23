@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/Button'
 import Navigation from '@/app/components/Navigation'
 import { formatCurrency, formatDate, formatPercentage } from '@/lib/utils'
+import EmployeeSelector from '@/app/components/EmployeeSelector'
 import { toast } from 'sonner'
 
 interface User {
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -124,6 +126,13 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Employee Selector */}
+        <EmployeeSelector
+          onEmployeeSelect={setSelectedEmployee}
+          selectedEmployee={selectedEmployee}
+          userRole={user.role}
+        />
+        
         {renderDashboard()}
       </main>
     </div>

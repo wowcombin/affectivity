@@ -12,80 +12,58 @@ interface NavigationProps {
 
 export default function Navigation({ userRole, onLogout }: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const pathname = usePathname()
 
-  const navigationItems = [
-    {
-      name: 'Дашборд',
-      href: '/',
-      icon: '🏠',
-      roles: ['Admin', 'Manager', 'HR', 'CFO', 'Employee', 'Tester']
-    },
-    {
-      name: 'Сотрудники',
-      href: '/employees',
-      icon: '👥',
-      roles: ['Admin', 'HR']
-    },
-    {
-      name: 'Казино',
-      href: '/casinos',
-      icon: '🎰',
-      roles: ['Admin', 'Manager']
-    },
-    {
-      name: 'Банкир → CEO',
-      href: '/banker-transactions',
-      icon: '💸',
-      roles: ['Admin', 'Manager', 'CFO', 'CEO']
-    },
-    {
-      name: 'Тестирование',
-      href: '/site-testing',
-      icon: '🧪',
-      roles: ['Admin', 'Manager', 'Tester']
-    },
-    {
-      name: 'Расходы',
-      href: '/expenses',
-      icon: '💰',
-      roles: ['Admin', 'CFO']
-    },
-    {
-      name: 'Зарплаты',
-      href: '/salaries',
-      icon: '💳',
-      roles: ['Admin', 'CFO']
-    },
-    {
-      name: 'Транзакции',
-      href: '/transactions',
-      icon: '📊',
-      roles: ['Admin', 'Manager', 'CFO']
-    },
-    {
-      name: 'Карты',
-      href: '/cards',
-      icon: '💳',
-      roles: ['Admin', 'Manager']
-    },
-    {
-      name: 'Профиль',
-      href: '/profile',
-      icon: '👤',
-      roles: ['Admin', 'Manager', 'HR', 'CFO', 'Employee', 'Tester']
-    }
-  ]
+  // Группируем навигацию по ролям
+  const roleNavigation = {
+    'HR': [
+      { name: 'Сотрудники', href: '/employees', icon: '👥' },
+      { name: 'Профиль', href: '/profile', icon: '👤' }
+    ],
+    'Manager': [
+      { name: 'Казино', href: '/casinos', icon: '🎰' },
+      { name: 'Банкир → CEO', href: '/banker-transactions', icon: '💸' },
+      { name: 'Тестирование', href: '/site-testing', icon: '🧪' },
+      { name: 'Транзакции', href: '/transactions', icon: '📊' },
+      { name: 'Карты', href: '/cards', icon: '💳' },
+      { name: 'Профиль', href: '/profile', icon: '👤' }
+    ],
+    'CFO': [
+      { name: 'Расходы', href: '/expenses', icon: '💰' },
+      { name: 'Зарплаты', href: '/salaries', icon: '💳' },
+      { name: 'Банкир → CEO', href: '/banker-transactions', icon: '💸' },
+      { name: 'Транзакции', href: '/transactions', icon: '📊' },
+      { name: 'Профиль', href: '/profile', icon: '👤' }
+    ],
+    'CEO': [
+      { name: 'Банкир → CEO', href: '/banker-transactions', icon: '💸' },
+      { name: 'Профиль', href: '/profile', icon: '👤' }
+    ],
+    'Tester': [
+      { name: 'Тестирование', href: '/site-testing', icon: '🧪' },
+      { name: 'Профиль', href: '/profile', icon: '👤' }
+    ],
+    'Employee': [
+      { name: 'Профиль', href: '/profile', icon: '👤' }
+    ],
+    'Admin': [
+      { name: 'Сотрудники', href: '/employees', icon: '👥' },
+      { name: 'Казино', href: '/casinos', icon: '🎰' },
+      { name: 'Банкир → CEO', href: '/banker-transactions', icon: '💸' },
+      { name: 'Тестирование', href: '/site-testing', icon: '🧪' },
+      { name: 'Расходы', href: '/expenses', icon: '💰' },
+      { name: 'Зарплаты', href: '/salaries', icon: '💳' },
+      { name: 'Транзакции', href: '/transactions', icon: '📊' },
+      { name: 'Карты', href: '/cards', icon: '💳' },
+      { name: 'Профиль', href: '/profile', icon: '👤' }
+    ]
+  }
 
-  const filteredItems = navigationItems.filter(item => 
-    item.roles.includes(userRole)
-  )
+  const currentRoleItems = roleNavigation[userRole as keyof typeof roleNavigation] || []
 
-  const isActive = (href: string) => {
-    if (href === '/') {
-      return pathname === '/'
-    }
-    return pathname.startsWith(href)
+  const toggleDropdown = (role: string) => {
+    setActiveDropdown(activeDropdown === role ? null : role)
   }
 
   return (
@@ -96,43 +74,92 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+              <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg mr-3">
                 <span className="text-white font-bold text-lg">A</span>
               </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Affectivity
-              </h1>
+              </span>
             </div>
 
-            {/* Navigation Links */}
-            <div className="flex space-x-1">
-              {filteredItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
-                    isActive(item.href)
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                      : 'text-gray-700 hover:bg-white/50 hover:text-gray-900'
-                  }`}
-                >
-                  <span className="mr-2">{item.icon}</span>
-                  {item.name}
-                </Link>
-              ))}
+            {/* Role-based Dropdowns */}
+            <div className="flex space-x-2">
+              {Object.keys(roleNavigation).map((role) => {
+                const items = roleNavigation[role as keyof typeof roleNavigation]
+                const isActive = activeDropdown === role
+                const hasActiveItem = items.some(item => pathname === item.href)
+                
+                return (
+                  <div key={role} className="relative">
+                    <button
+                      onClick={() => toggleDropdown(role)}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 flex items-center ${
+                        isActive || hasActiveItem
+                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                          : 'text-gray-700 hover:bg-white/50 hover:text-gray-900'
+                      }`}
+                    >
+                      <span className="mr-2">
+                        {role === 'HR' ? '👥' : 
+                         role === 'Manager' ? '👨‍💼' : 
+                         role === 'CFO' ? '💰' : 
+                         role === 'CEO' ? '👑' : 
+                         role === 'Tester' ? '🧪' : 
+                         role === 'Employee' ? '👤' : 
+                         role === 'Admin' ? '⚡' : '👤'}
+                      </span>
+                      {role}
+                      <svg className={`ml-2 h-4 w-4 transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {isActive && (
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 z-50">
+                        <div className="py-2">
+                          {items.map((item) => {
+                            const isActiveItem = pathname === item.href
+                            return (
+                              <Link
+                                key={item.name}
+                                href={item.href}
+                                onClick={() => setActiveDropdown(null)}
+                                className={`block px-4 py-3 text-sm font-medium transition-all duration-300 ${
+                                  isActiveItem
+                                    ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border-r-2 border-blue-500'
+                                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                }`}
+                              >
+                                <span className="mr-3">{item.icon}</span>
+                                {item.name}
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
 
-            {/* User Info and Logout */}
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-700 bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm">
-                <span className="font-semibold">{userRole}</span>
-              </div>
+            {/* User Actions */}
+            <div className="flex items-center space-x-3">
+              <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                💬 Сообщения
+              </Button>
+              <Link href="/profile">
+                <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  👤 Профиль
+                </Button>
+              </Link>
               {onLogout && (
                 <Button
                   onClick={onLogout}
-                  className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold px-4 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 >
-                  🚪 Выйти
+                  🚪 Выход
                 </Button>
               )}
             </div>
@@ -142,58 +169,86 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
 
       {/* Mobile Navigation */}
       <nav className="lg:hidden bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center">
-              <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                <span className="text-white font-bold text-lg">A</span>
+              <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg mr-2">
+                <span className="text-white font-bold text-sm">A</span>
               </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Affectivity
-              </h1>
+              </span>
             </div>
 
             {/* Mobile Menu Button */}
-            <Button
+            <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden bg-white/50 hover:bg-white/70 backdrop-blur-sm border-white/20"
+              className="p-2 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-300"
             >
-              <span className="text-2xl">☰</span>
-            </Button>
+              <svg className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
           </div>
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
             <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 mt-2 mb-4">
               <div className="px-2 pt-2 pb-3 space-y-1">
-                {filteredItems.map((item) => (
+                {/* Role-based sections */}
+                {Object.keys(roleNavigation).map((role) => {
+                  const items = roleNavigation[role as keyof typeof roleNavigation]
+                  return (
+                    <div key={role} className="space-y-1">
+                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        {role}
+                      </div>
+                      {items.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`block px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                              isActive
+                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                                : 'text-gray-700 hover:bg-white/50 hover:text-gray-900'
+                            }`}
+                          >
+                            <span className="mr-3">{item.icon}</span>
+                            {item.name}
+                          </Link>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+                
+                {/* User Actions */}
+                <div className="border-t border-gray-200 pt-2 mt-2">
                   <Link
-                    key={item.name}
-                    href={item.href}
+                    href="/profile"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block px-3 py-2 rounded-xl text-base font-medium transition-all duration-300 ${
-                      isActive(item.href)
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                        : 'text-gray-700 hover:bg-white/50 hover:text-gray-900'
-                    }`}
+                    className="block px-3 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-white/50 hover:text-gray-900 transition-all duration-300"
                   >
-                    <span className="mr-3">{item.icon}</span>
-                    {item.name}
+                    <span className="mr-3">👤</span>
+                    Профиль
                   </Link>
-                ))}
-                {onLogout && (
-                  <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false)
-                      onLogout()
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-base font-medium transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg hover:from-red-600 hover:to-pink-600"
-                  >
-                    <span className="mr-3">🚪</span>
-                    Выйти
-                  </button>
-                )}
+                  {onLogout && (
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        onLogout()
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg hover:from-red-600 hover:to-pink-600"
+                    >
+                      <span className="mr-3">🚪</span>
+                      Выход
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
