@@ -9,23 +9,23 @@ import { toast } from 'sonner'
 
 interface Card {
   id: string
+  bank_account_id: string
   card_number: string
-  card_type: string
   expiry_date: string
   cvv: string
-  balance_usd: number
-  status: string
-  casino_id: string
-  employee_id: string
+  card_type: 'pink' | 'gray'
+  status: 'free' | 'assigned' | 'in_process' | 'completed'
+  assigned_employee_id: string | null
+  assigned_casino_id: string | null
+  deposit_amount: number | null
+  withdrawal_amount: number | null
+  profit: number | null
   created_at: string
-  casinos: {
-    name: string
-    url: string
-  }
-  employees: {
-    users: {
-      username: string
-      full_name: string
+  updated_at: string
+  bank_accounts: {
+    account_name: string
+    banks: {
+      name: string
     }
   }
 }
@@ -38,13 +38,12 @@ export default function CardsPage() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterType, setFilterType] = useState('all')
   const [formData, setFormData] = useState({
+    bank_account_id: '',
     card_number: '',
-    card_type: 'visa',
+    card_type: 'pink' as 'pink' | 'gray',
     expiry_date: '',
     cvv: '',
-    balance_usd: '',
-    casino_id: '',
-    employee_id: ''
+    status: 'free' as 'free' | 'assigned' | 'in_process' | 'completed'
   })
   const router = useRouter()
 
@@ -60,16 +59,29 @@ export default function CardsPage() {
 
   const loadCards = async () => {
     try {
-      const response = await fetch('/api/cards')
+      const authToken = localStorage.getItem('auth-token')
+      if (!authToken) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/cards', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+      
+      console.log('Cards response:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
-        setCards(data.cards)
+        setCards(data.cards || [])
       } else {
         console.error('Failed to load cards')
         toast.error('Ошибка загрузки карт')
       }
     } catch (error) {
-      console.error('Error loading cards:', error)
+      console.error('Cards error:', error)
       toast.error('Ошибка загрузки карт')
     } finally {
       setIsLoading(false)
@@ -80,30 +92,31 @@ export default function CardsPage() {
     e.preventDefault()
     
     try {
+      const authToken = localStorage.getItem('auth-token')
+      if (!authToken) {
+        router.push('/login')
+        return
+      }
+
       const response = await fetch('/api/cards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({
-          ...formData,
-          balance_usd: parseFloat(formData.balance_usd) || 0,
-          casino_id: '1', // Временно используем ID 1
-          employee_id: '1' // Временно используем ID 1
-        }),
+        body: JSON.stringify(formData),
       })
 
       if (response.ok) {
         toast.success('Карта успешно добавлена!')
         setShowAddForm(false)
         setFormData({
+          bank_account_id: '',
           card_number: '',
-          card_type: 'visa',
+          card_type: 'pink',
           expiry_date: '',
           cvv: '',
-          balance_usd: '',
-          casino_id: '',
-          employee_id: ''
+          status: 'free'
         })
         loadCards()
       } else {
@@ -147,44 +160,42 @@ export default function CardsPage() {
     return filtered
   }
 
-  const getTotalBalance = () => {
-    return getFilteredCards().reduce((sum, c) => sum + c.balance_usd, 0)
+  const getTotalProfit = () => {
+    return getFilteredCards().reduce((sum, c) => sum + (c.profit || 0), 0)
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'from-green-500 to-green-600'
-      case 'inactive': return 'from-gray-500 to-gray-600'
-      case 'expired': return 'from-red-500 to-red-600'
-      case 'blocked': return 'from-orange-500 to-red-500'
+      case 'free': return 'from-green-500 to-green-600'
+      case 'assigned': return 'from-blue-500 to-blue-600'
+      case 'in_process': return 'from-yellow-500 to-yellow-600'
+      case 'completed': return 'from-purple-500 to-purple-600'
       default: return 'from-gray-500 to-gray-600'
     }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active': return '✅'
-      case 'inactive': return '⏸️'
-      case 'expired': return '❌'
-      case 'blocked': return '🚫'
+      case 'free': return '✅'
+      case 'assigned': return '📋'
+      case 'in_process': return '⏳'
+      case 'completed': return '🎯'
       default: return '❓'
     }
   }
 
   const getCardTypeIcon = (type: string) => {
     switch (type) {
-      case 'visa': return '💳'
-      case 'mastercard': return '💳'
-      case 'amex': return '💳'
+      case 'pink': return '🌸'
+      case 'gray': return '⚫'
       default: return '💳'
     }
   }
 
   const getCardTypeColor = (type: string) => {
     switch (type) {
-      case 'visa': return 'from-blue-500 to-blue-600'
-      case 'mastercard': return 'from-red-500 to-orange-500'
-      case 'amex': return 'from-green-500 to-green-600'
+      case 'pink': return 'from-pink-500 to-pink-600'
+      case 'gray': return 'from-gray-500 to-gray-600'
       default: return 'from-gray-500 to-gray-600'
     }
   }
@@ -226,8 +237,8 @@ export default function CardsPage() {
                 <span className="text-2xl">💰</span>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Общий баланс</h3>
-                <p className="text-3xl font-bold text-green-600">{formatCurrency(getTotalBalance())}</p>
+                <h3 className="text-lg font-medium text-gray-900">Общая прибыль</h3>
+                <p className="text-3xl font-bold text-green-600">{formatCurrency(getTotalProfit())}</p>
               </div>
             </div>
           </div>
@@ -237,9 +248,9 @@ export default function CardsPage() {
                 <span className="text-2xl">✅</span>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Активных</h3>
+                <h3 className="text-lg font-medium text-gray-900">Свободных</h3>
                 <p className="text-3xl font-bold text-purple-600">
-                  {cards.filter(c => c.status === 'active').length}
+                  {cards.filter(c => c.status === 'free').length}
                 </p>
               </div>
             </div>
@@ -250,9 +261,9 @@ export default function CardsPage() {
                 <span className="text-2xl">❌</span>
               </div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Просроченных</h3>
+                <h3 className="text-lg font-medium text-gray-900">В работе</h3>
                 <p className="text-3xl font-bold text-orange-600">
-                  {cards.filter(c => c.status === 'expired').length}
+                  {cards.filter(c => c.status === 'in_process').length}
                 </p>
               </div>
             </div>
@@ -276,10 +287,10 @@ export default function CardsPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
               >
                 <option value="all">Все статусы</option>
-                <option value="active">✅ Активные</option>
-                <option value="inactive">⏸️ Неактивные</option>
-                <option value="expired">❌ Просроченные</option>
-                <option value="blocked">🚫 Заблокированные</option>
+                <option value="free">✅ Свободные</option>
+                <option value="assigned">📋 Назначенные</option>
+                <option value="in_process">⏳ В работе</option>
+                <option value="completed">🎯 Завершенные</option>
               </select>
             </div>
             <div>
@@ -292,9 +303,8 @@ export default function CardsPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
               >
                 <option value="all">Все типы</option>
-                <option value="visa">💳 Visa</option>
-                <option value="mastercard">💳 Mastercard</option>
-                <option value="amex">💳 American Express</option>
+                <option value="pink">🌸 Розовые</option>
+                <option value="gray">⚫ Серые</option>
               </select>
             </div>
           </div>
@@ -321,13 +331,13 @@ export default function CardsPage() {
                     💳 Карта
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    🎰 Казино
+                    🏦 Банк
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    👤 Сотрудник
+                    👤 Назначение
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    💰 Баланс
+                    💰 Прибыль
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     📊 Статус
@@ -359,34 +369,32 @@ export default function CardsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-gray-900">
-                        {card.casinos.name}
+                        {card.bank_accounts.banks.name}
                       </div>
                       <div className="text-sm text-gray-600">
-                        <a href={card.casinos.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                          {card.casinos.url}
-                        </a>
+                        {card.bank_accounts.account_name}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-gray-900">
-                        {card.employees.users.full_name || card.employees.users.username}
+                        {card.assigned_employee_id ? 'Назначена' : 'Не назначена'}
                       </div>
                       <div className="text-sm text-gray-600">
-                        @{card.employees.users.username}
+                        {card.assigned_casino_id ? 'В казино' : 'Свободна'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg inline-block">
-                        {formatCurrency(card.balance_usd)}
+                        {card.profit ? formatCurrency(card.profit) : 'Нет данных'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getStatusColor(card.status)} text-white shadow-lg`}>
                         {getStatusIcon(card.status)} {
-                          card.status === 'active' ? 'Активна' :
-                          card.status === 'inactive' ? 'Неактивна' :
-                          card.status === 'expired' ? 'Просрочена' :
-                          card.status === 'blocked' ? 'Заблокирована' : card.status
+                          card.status === 'free' ? 'Свободна' :
+                          card.status === 'assigned' ? 'Назначена' :
+                          card.status === 'in_process' ? 'В работе' :
+                          card.status === 'completed' ? 'Завершена' : card.status
                         }
                       </span>
                     </td>
@@ -430,6 +438,19 @@ export default function CardsPage() {
                     placeholder="**** **** **** ****"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🏦 Банковский аккаунт ID
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.bank_account_id}
+                    onChange={(e) => setFormData({...formData, bank_account_id: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                    placeholder="UUID банковского аккаунта"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -437,12 +458,11 @@ export default function CardsPage() {
                     </label>
                     <select
                       value={formData.card_type}
-                      onChange={(e) => setFormData({...formData, card_type: e.target.value})}
+                      onChange={(e) => setFormData({...formData, card_type: e.target.value as 'pink' | 'gray'})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
                     >
-                      <option value="visa">💳 Visa</option>
-                      <option value="mastercard">💳 Mastercard</option>
-                      <option value="amex">💳 American Express</option>
+                      <option value="pink">🌸 Розовая</option>
+                      <option value="gray">⚫ Серая</option>
                     </select>
                   </div>
                   <div>
@@ -475,17 +495,18 @@ export default function CardsPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💰 Баланс (USD)
+                      📊 Статус
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={formData.balance_usd}
-                      onChange={(e) => setFormData({...formData, balance_usd: e.target.value})}
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value as 'free' | 'assigned' | 'in_process' | 'completed'})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                      placeholder="0.00"
-                    />
+                    >
+                      <option value="free">✅ Свободна</option>
+                      <option value="assigned">📋 Назначена</option>
+                      <option value="in_process">⏳ В работе</option>
+                      <option value="completed">🎯 Завершена</option>
+                    </select>
                   </div>
                 </div>
                 <div className="flex justify-end space-x-3 pt-4">
