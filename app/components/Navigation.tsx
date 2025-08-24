@@ -81,6 +81,7 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       { name: 'Транзакции', href: '/transactions', icon: '💰' },
       { name: 'Отчеты', href: '/reports', icon: '📈' },
       { name: 'Пользователи', href: '/users', icon: '👤' },
+      { name: 'Логи', href: '/logs', icon: '📋' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ]
   }
