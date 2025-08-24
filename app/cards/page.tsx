@@ -9,200 +9,193 @@ import { toast } from 'sonner'
 
 interface Card {
   id: string
-  bank_account_id: string
   card_number: string
-  expiry_date: string
-  cvv: string
+  card_expiry: string
+  card_cvv: string
   card_type: 'pink' | 'gray'
-  status: 'free' | 'assigned' | 'in_process' | 'completed'
-  assigned_employee_id: string | null
-  assigned_casino_id: string | null
-  deposit_amount: number | null
-  withdrawal_amount: number | null
-  profit: number | null
+  is_active: boolean
+  assigned_to?: string
+  assigned_site?: string
+  times_assigned: number
+  times_worked: number
   created_at: string
-  updated_at: string
-  bank_accounts: {
-    account_name: string
-    banks: {
-      name: string
-    }
+  bank_account: {
+    bank_name: string
+    bank_country: string
   }
+}
+
+interface Employee {
+  id: string
+  first_name: string
+  last_name: string
+  username: string
+}
+
+interface TestSite {
+  id: string
+  casino_name: string
+  status: 'active' | 'processing' | 'testing'
 }
 
 export default function CardsPage() {
   const [cards, setCards] = useState<Card[]>([])
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [testSites, setTestSites] = useState<TestSite[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [userRole, setUserRole] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [filterType, setFilterType] = useState('all')
-  const [formData, setFormData] = useState({
-    bank_account_id: '',
-    card_number: '',
-    card_type: 'pink' as 'pink' | 'gray',
-    expiry_date: '',
-    cvv: '',
-    status: 'free' as 'free' | 'assigned' | 'in_process' | 'completed'
+  const [selectedCards, setSelectedCards] = useState<string[]>([])
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
+  const [assignmentData, setAssignmentData] = useState({
+    employeeId: '',
+    siteId: ''
   })
   const router = useRouter()
 
   useEffect(() => {
-    // Получаем роль пользователя
     const userData = localStorage.getItem('user')
     if (userData) {
       const user = JSON.parse(userData)
       setUserRole(user.role)
+      loadData()
+    } else {
+      router.push('/login')
     }
-    loadCards()
   }, [])
 
-  const loadCards = async () => {
+  const loadData = async () => {
     try {
       const authToken = localStorage.getItem('auth-token')
-      if (!authToken) {
-        router.push('/login')
-        return
-      }
-
-      const response = await fetch('/api/cards', {
+      
+      // Загружаем карты
+      const cardsResponse = await fetch('/api/cards', {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
       })
       
-      console.log('Cards response:', response.status)
-      
-      if (response.ok) {
-        const data = await response.json()
-        setCards(data.cards || [])
-      } else {
-        console.error('Failed to load cards')
-        toast.error('Ошибка загрузки карт')
+      if (cardsResponse.ok) {
+        const cardsData = await cardsResponse.json()
+        setCards(cardsData.cards || [])
       }
+
+      // Загружаем сотрудников
+      const employeesResponse = await fetch('/api/employees', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+      
+      if (employeesResponse.ok) {
+        const employeesData = await employeesResponse.json()
+        setEmployees(employeesData.employees || [])
+      }
+
+      // Загружаем тестовые сайты
+      const sitesResponse = await fetch('/api/test-sites', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+      
+      if (sitesResponse.ok) {
+        const sitesData = await sitesResponse.json()
+        setTestSites(sitesData.sites || [])
+      }
+
     } catch (error) {
-      console.error('Cards error:', error)
-      toast.error('Ошибка загрузки карт')
+      console.error('Load data error:', error)
+      toast.error('Ошибка загрузки данных')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleAddCard = async (e: React.FormEvent) => {
+  const handleSelectAll = () => {
+    if (selectedCards.length === cards.length) {
+      setSelectedCards([])
+    } else {
+      setSelectedCards(cards.map(card => card.id))
+    }
+  }
+
+  const handleSelectCard = (cardId: string) => {
+    if (selectedCards.includes(cardId)) {
+      setSelectedCards(selectedCards.filter(id => id !== cardId))
+    } else {
+      setSelectedCards([...selectedCards, cardId])
+    }
+  }
+
+  const handleMassAssignment = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    if (selectedCards.length === 0) {
+      toast.error('Выберите карты для назначения')
+      return
+    }
+
+    if (!assignmentData.employeeId || !assignmentData.siteId) {
+      toast.error('Выберите сотрудника и сайт')
+      return
+    }
+
     try {
       const authToken = localStorage.getItem('auth-token')
-      if (!authToken) {
-        router.push('/login')
-        return
-      }
-
-      const response = await fetch('/api/cards', {
+      const response = await fetch('/api/cards/assign', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          cardIds: selectedCards,
+          employeeId: assignmentData.employeeId,
+          siteId: assignmentData.siteId
+        })
       })
 
       if (response.ok) {
-        toast.success('Карта успешно добавлена!')
-        setShowAddForm(false)
-        setFormData({
-          bank_account_id: '',
-          card_number: '',
-          card_type: 'pink',
-          expiry_date: '',
-          cvv: '',
-          status: 'free'
-        })
-        loadCards()
+        toast.success(`Карты успешно назначены!`)
+        setShowAssignmentModal(false)
+        setSelectedCards([])
+        setAssignmentData({ employeeId: '', siteId: '' })
+        loadData()
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Ошибка добавления карты')
+        toast.error(error.error || 'Ошибка назначения карт')
       }
     } catch (error) {
-      console.error('Error adding card:', error)
-      toast.error('Ошибка добавления карты')
-    }
-  }
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-      localStorage.removeItem('auth-token')
-      localStorage.removeItem('user')
-      
-      // Очищаем cookie
-      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      
-      router.push('/login')
-      toast.success('Вы успешно вышли из системы')
-    } catch (error) {
-      console.error('Logout error:', error)
-      toast.error('Ошибка при выходе из системы')
-    }
-  }
-
-  const getFilteredCards = () => {
-    let filtered = cards
-
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(c => c.status === filterStatus)
-    }
-
-    if (filterType !== 'all') {
-      filtered = filtered.filter(c => c.card_type === filterType)
-    }
-
-    return filtered
-  }
-
-  const getTotalProfit = () => {
-    return getFilteredCards().reduce((sum, c) => sum + (c.profit || 0), 0)
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'free': return 'from-green-500 to-green-600'
-      case 'assigned': return 'from-blue-500 to-blue-600'
-      case 'in_process': return 'from-yellow-500 to-yellow-600'
-      case 'completed': return 'from-purple-500 to-purple-600'
-      default: return 'from-gray-500 to-gray-600'
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'free': return '✅'
-      case 'assigned': return '📋'
-      case 'in_process': return '⏳'
-      case 'completed': return '🎯'
-      default: return '❓'
-    }
-  }
-
-  const getCardTypeIcon = (type: string) => {
-    switch (type) {
-      case 'pink': return '🌸'
-      case 'gray': return '⚫'
-      default: return '💳'
+      console.error('Assignment error:', error)
+      toast.error('Ошибка назначения карт')
     }
   }
 
   const getCardTypeColor = (type: string) => {
-    switch (type) {
-      case 'pink': return 'from-pink-500 to-pink-600'
-      case 'gray': return 'from-gray-500 to-gray-600'
-      default: return 'from-gray-500 to-gray-600'
-    }
+    return type === 'pink' ? 'from-pink-500 to-pink-600' : 'from-gray-500 to-gray-600'
+  }
+
+  const getCardTypeIcon = (type: string) => {
+    return type === 'pink' ? '🩷' : '⚫'
+  }
+
+  const getStatusColor = (timesAssigned: number, timesWorked: number) => {
+    if (timesAssigned === 0) return 'from-gray-500 to-gray-600'
+    if (timesWorked === 0) return 'from-yellow-500 to-yellow-600'
+    if (timesWorked < timesAssigned) return 'from-orange-500 to-orange-600'
+    return 'from-green-500 to-green-600'
+  }
+
+  const getStatusText = (timesAssigned: number, timesWorked: number) => {
+    if (timesAssigned === 0) return 'Не назначена'
+    if (timesWorked === 0) return 'В процессе'
+    if (timesWorked < timesAssigned) return 'Частично отработана'
+    return 'Отработана'
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-lg">Загрузка карт...</p>
@@ -211,318 +204,258 @@ export default function CardsPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
-      {/* Navigation */}
-      <Navigation userRole={userRole} onLogout={handleLogout} />
+  if (!['Admin', 'CFO', 'Manager'].includes(userRole)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+        <Navigation userRole={userRole} />
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-8 text-center">
+            <div className="text-6xl mb-4">🚫</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Доступ запрещен</h3>
+            <p className="text-gray-600">Только администраторы, CFO и менеджеры могут управлять картами</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                <span className="text-2xl">💳</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Всего карт</h3>
-                <p className="text-3xl font-bold text-blue-600">{cards.length}</p>
-              </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+      <Navigation userRole={userRole} />
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">💳 Управление картами</h1>
+              <p className="text-gray-600">Назначение карт сотрудникам на тестовые сайты</p>
             </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                <span className="text-2xl">💰</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Общая прибыль</h3>
-                <p className="text-3xl font-bold text-green-600">{formatCurrency(getTotalProfit())}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                <span className="text-2xl">✅</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Свободных</h3>
-                <p className="text-3xl font-bold text-purple-600">
-                  {cards.filter(c => c.status === 'free').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                <span className="text-2xl">❌</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">В работе</h3>
-                <p className="text-3xl font-bold text-orange-600">
-                  {cards.filter(c => c.status === 'in_process').length}
-                </p>
-              </div>
+            <div className="flex space-x-4">
+              {selectedCards.length > 0 && (
+                <Button
+                  onClick={() => setShowAssignmentModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  📋 Назначить выбранные ({selectedCards.length})
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-            <span className="mr-2">🔍</span>
-            Фильтры
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Статус карты
-              </label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-              >
-                <option value="all">Все статусы</option>
-                <option value="free">✅ Свободные</option>
-                <option value="assigned">📋 Назначенные</option>
-                <option value="in_process">⏳ В работе</option>
-                <option value="completed">🎯 Завершенные</option>
-              </select>
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
+            <div className="flex items-center">
+              <div className="text-3xl mr-4">💳</div>
+              <div>
+                <p className="text-sm text-gray-600">Всего карт</p>
+                <p className="text-2xl font-bold text-gray-900">{cards.length}</p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Тип карты
-              </label>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-              >
-                <option value="all">Все типы</option>
-                <option value="pink">🌸 Розовые</option>
-                <option value="gray">⚫ Серые</option>
-              </select>
+          </div>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
+            <div className="flex items-center">
+              <div className="text-3xl mr-4">🩷</div>
+              <div>
+                <p className="text-sm text-gray-600">Розовые карты</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {cards.filter(card => card.card_type === 'pink').length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
+            <div className="flex items-center">
+              <div className="text-3xl mr-4">⚫</div>
+              <div>
+                <p className="text-sm text-gray-600">Серые карты</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {cards.filter(card => card.card_type === 'gray').length}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
+            <div className="flex items-center">
+              <div className="text-3xl mr-4">✅</div>
+              <div>
+                <p className="text-sm text-gray-600">Активные карты</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {cards.filter(card => card.is_active).length}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Cards List */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/20 bg-gradient-to-r from-purple-50 to-pink-50">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">💳 Список карт</h2>
-              <Button
-                onClick={() => setShowAddForm(true)}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              >
-                ✨ + Добавить карту
-              </Button>
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Список карт</h2>
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={selectedCards.length === cards.length && cards.length > 0}
+                  onChange={handleSelectAll}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Выбрать все</span>
+              </label>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/20">
-              <thead className="bg-white/50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    💳 Карта
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    🏦 Банк
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    👤 Назначение
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    💰 Прибыль
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    📊 Статус
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    📅 Дата
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white/30 divide-y divide-white/20">
-                {getFilteredCards().map((card) => (
-                  <tr key={card.id} className="hover:bg-white/50 transition-colors duration-200">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className={`h-10 w-10 rounded-xl bg-gradient-to-r ${getCardTypeColor(card.card_type)} flex items-center justify-center shadow-lg`}>
-                            <span className="text-lg">{getCardTypeIcon(card.card_type)}</span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-bold text-gray-900">
-                            {card.card_number}
-                          </div>
-                          <div className="text-sm text-gray-600 capitalize">
-                            {card.card_type} • {card.expiry_date}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">
-                        {card.bank_accounts.banks.name}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {card.bank_accounts.account_name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-gray-900">
-                        {card.assigned_employee_id ? 'Назначена' : 'Не назначена'}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {card.assigned_casino_id ? 'В казино' : 'Свободна'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg inline-block">
-                        {card.profit ? formatCurrency(card.profit) : 'Нет данных'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getStatusColor(card.status)} text-white shadow-lg`}>
-                        {getStatusIcon(card.status)} {
-                          card.status === 'free' ? 'Свободна' :
-                          card.status === 'assigned' ? 'Назначена' :
-                          card.status === 'in_process' ? 'В работе' :
-                          card.status === 'completed' ? 'Завершена' : card.status
-                        }
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      📅 {formatDate(card.created_at)}
-                    </td>
+          
+          {cards.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">💳</div>
+              <p className="text-gray-600">Нет доступных карт</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Выбор</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Карта</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Тип</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Банк</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Статус</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Назначения</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Статистика</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {cards.map((card) => (
+                    <tr key={card.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                      <td className="py-3 px-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedCards.includes(card.id)}
+                          onChange={() => handleSelectCard(card.id)}
+                          className="mr-2"
+                        />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-mono text-sm">
+                          <div className="text-gray-900">{card.card_number}</div>
+                          <div className="text-gray-500">{card.card_expiry} | {card.card_cvv}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getCardTypeColor(card.card_type)} text-white`}>
+                          {getCardTypeIcon(card.card_type)} {card.card_type === 'pink' ? 'Розовая' : 'Серая'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div>
+                          <div className="font-semibold text-gray-900">{card.bank_account.bank_name}</div>
+                          <div className="text-sm text-gray-500">{card.bank_account.bank_country}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${card.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                          {card.is_active ? '✅ Активна' : '❌ Неактивна'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-sm">
+                          {card.assigned_to ? (
+                            <div>
+                              <div className="text-gray-900">Сотрудник: {card.assigned_to}</div>
+                              {card.assigned_site && (
+                                <div className="text-gray-500">Сайт: {card.assigned_site}</div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">Не назначена</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-sm">
+                          <div className="text-gray-900">Назначена: {card.times_assigned} раз</div>
+                          <div className="text-gray-500">Отработана: {card.times_worked} раз</div>
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getStatusColor(card.times_assigned, card.times_worked)} text-white mt-1`}>
+                            {getStatusText(card.times_assigned, card.times_worked)}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Add Card Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white/95 backdrop-blur-md">
-            <div className="mt-3">
-              <div className="text-center mb-6">
-                <div className="h-16 w-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <span className="text-white font-bold text-2xl">💳</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Добавить новую карту
-                </h3>
-                <p className="text-gray-600">Заполните информацию о карте</p>
-              </div>
+      {/* Assignment Modal */}
+      {showAssignmentModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">📋 Назначить карты</h2>
               
-              <form onSubmit={handleAddCard} className="space-y-6">
+              <form onSubmit={handleMassAssignment} className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    💳 Номер карты
+                    👤 Сотрудник
                   </label>
-                  <input
-                    type="text"
+                  <select
                     required
-                    value={formData.card_number}
-                    onChange={(e) => setFormData({...formData, card_number: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                    placeholder="**** **** **** ****"
-                  />
+                    value={assignmentData.employeeId}
+                    onChange={(e) => setAssignmentData({...assignmentData, employeeId: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Выберите сотрудника</option>
+                    {employees.map((employee) => (
+                      <option key={employee.id} value={employee.id}>
+                        {employee.first_name} {employee.last_name} ({employee.username})
+                      </option>
+                    ))}
+                  </select>
                 </div>
+                
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    🏦 Банковский аккаунт ID
+                    🌐 Тестовый сайт
                   </label>
-                  <input
-                    type="text"
+                  <select
                     required
-                    value={formData.bank_account_id}
-                    onChange={(e) => setFormData({...formData, bank_account_id: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                    placeholder="UUID банковского аккаунта"
-                  />
+                    value={assignmentData.siteId}
+                    onChange={(e) => setAssignmentData({...assignmentData, siteId: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Выберите сайт</option>
+                    {testSites.filter(site => site.status === 'active').map((site) => (
+                      <option key={site.id} value={site.id}>
+                        {site.casino_name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🏷️ Тип карты
-                    </label>
-                    <select
-                      value={formData.card_type}
-                      onChange={(e) => setFormData({...formData, card_type: e.target.value as 'pink' | 'gray'})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                    >
-                      <option value="pink">🌸 Розовая</option>
-                      <option value="gray">⚫ Серая</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📅 Срок действия
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.expiry_date}
-                      onChange={(e) => setFormData({...formData, expiry_date: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                      placeholder="MM/YY"
-                    />
-                  </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Информация:</strong> Будет назначено {selectedCards.length} карт выбранному сотруднику на указанный сайт.
+                  </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔒 CVV
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.cvv}
-                      onChange={(e) => setFormData({...formData, cvv: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                      placeholder="123"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📊 Статус
-                    </label>
-                    <select
-                      value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value as 'free' | 'assigned' | 'in_process' | 'completed'})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                    >
-                      <option value="free">✅ Свободна</option>
-                      <option value="assigned">📋 Назначена</option>
-                      <option value="in_process">⏳ В работе</option>
-                      <option value="completed">🎯 Завершена</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-3 pt-4">
+
+                <div className="flex justify-end space-x-4">
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={() => setShowAddForm(false)}
-                    className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900"
+                    onClick={() => setShowAssignmentModal(false)}
+                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50"
                   >
-                    ❌ Отмена
+                    Отмена
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl"
                   >
-                    ✨ Добавить
+                    Назначить
                   </Button>
                 </div>
               </form>

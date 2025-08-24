@@ -53,6 +53,7 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
     'CFO': [
       { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Банки', href: '/banks', icon: '🏦' },
+      { name: 'Банковские аккаунты', href: '/bank-accounts', icon: '🏦' },
       { name: 'Карты', href: '/cards', icon: '💳' },
       { name: 'Казино', href: '/casinos', icon: '🎰' },
       { name: 'Сотрудники', href: '/employees', icon: '👥' },
@@ -81,6 +82,7 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
     'Admin': [
       { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Банки', href: '/banks', icon: '🏦' },
+      { name: 'Банковские аккаунты', href: '/bank-accounts', icon: '🏦' },
       { name: 'Карты', href: '/cards', icon: '💳' },
       { name: 'Казино', href: '/casinos', icon: '🎰' },
       { name: 'Сотрудники', href: '/employees', icon: '👥' },

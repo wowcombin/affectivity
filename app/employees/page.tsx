@@ -387,8 +387,9 @@ export default function EmployeesPage() {
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Сотрудник</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Роль</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Банк</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Банковские аккаунты</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Карта</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Данные входа</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Зарплата</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Статус</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Действия</th>
@@ -415,13 +416,25 @@ export default function EmployeesPage() {
                         <div>
                           <div className="font-semibold text-gray-900">{employee.bank_name}</div>
                           <div className="text-sm text-gray-500">{employee.bank_country}</div>
-                          <div className="text-xs text-gray-400">{employee.account_number}</div>
+                          <div className="text-xs text-gray-400">Счет: {employee.account_number}</div>
+                          <div className="text-xs text-gray-400">Сорт: {employee.sort_code}</div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="font-mono text-sm">
                           <div className="text-gray-900">{employee.card_number}</div>
                           <div className="text-gray-500">{employee.card_expiry} | {employee.card_cvv}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div>
+                          <div className="text-sm text-gray-900">
+                            <a href={employee.login_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                              🔗 {employee.login_url}
+                            </a>
+                          </div>
+                          <div className="text-xs text-gray-500">Логин: {employee.login_username}</div>
+                          <div className="text-xs text-gray-500">Пароль: {employee.login_password}</div>
                         </div>
                       </td>
                       <td className="py-3 px-4">

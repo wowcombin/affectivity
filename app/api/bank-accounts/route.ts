@@ -15,7 +15,22 @@ export async function GET(request: NextRequest) {
 
     const { data: bankAccounts, error } = await supabase
       .from('bank_accounts')
-      .select('*')
+      .select(`
+        *,
+        cards:cards (
+          id,
+          card_number,
+          card_expiry,
+          card_cvv,
+          card_type,
+          is_active,
+          assigned_to,
+          assigned_site,
+          times_assigned,
+          times_worked,
+          created_at
+        )
+      `)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -42,30 +57,30 @@ export async function POST(request: NextRequest) {
     }
 
     const {
-      bank_id,
-      account_name,
+      bank_name,
+      bank_country,
       account_number,
       sort_code,
       login_url,
+      login_username,
       login_password,
-      pink_cards_daily_limit
+      pink_cards_limit
     } = body
 
     // Валидация
-    if (!bank_id || !account_name || !account_number || !sort_code || !login_url || !login_password) {
+    if (!bank_name || !bank_country || !account_number || !sort_code || !login_url || !login_username || !login_password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const accountData = {
-      bank_id,
-      account_name,
+      bank_name,
+      bank_country,
       account_number,
       sort_code,
       login_url,
+      login_username,
       login_password,
-      pink_cards_daily_limit: pink_cards_daily_limit || 5,
-      pink_cards_remaining: pink_cards_daily_limit || 5,
-      last_reset_date: new Date().toISOString().split('T')[0]
+      pink_cards_limit: pink_cards_limit || 5
     }
 
     const { data, error } = await supabase
