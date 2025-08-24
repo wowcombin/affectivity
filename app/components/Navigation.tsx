@@ -35,13 +35,19 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
     'HR': [
       { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Сотрудники', href: '/employees', icon: '👥' },
+      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
+      { name: 'Задачи', href: '/tasks', icon: '✅' },
+      { name: 'NDA документы', href: '/nda-documents', icon: '📄' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Manager': [
       { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Сотрудники', href: '/employees', icon: '👥' },
+      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
       { name: 'Карты', href: '/cards', icon: '💳' },
       { name: 'Транзакции', href: '/transactions', icon: '💰' },
+      { name: 'Задачи', href: '/tasks', icon: '✅' },
+      { name: 'Проверка выводов', href: '/withdrawal-checks', icon: '🔍' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'CFO': [
@@ -52,14 +58,24 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       { name: 'Сотрудники', href: '/employees', icon: '👥' },
       { name: 'Транзакции', href: '/transactions', icon: '💰' },
       { name: 'Отчеты', href: '/reports', icon: '📈' },
+      { name: 'Расходы', href: '/expenses', icon: '💸' },
+      { name: 'Инвентаризация', href: '/inventory', icon: '📦' },
+      { name: 'Переводы', href: '/transfers', icon: '💱' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Tester': [
       { name: 'Дашборд', href: '/dashboard', icon: '📊' },
+      { name: 'Тестовые сайты', href: '/test-sites', icon: '🧪' },
+      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
+      { name: 'Активные сайты', href: '/active-sites', icon: '🌐' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Employee': [
       { name: 'Дашборд', href: '/dashboard', icon: '📊' },
+      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
+      { name: 'Мои задачи', href: '/my-tasks', icon: '✅' },
+      { name: 'Моя статистика', href: '/my-stats', icon: '📊' },
+      { name: 'Лидеры месяца', href: '/monthly-leaders', icon: '🏆' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Admin': [
@@ -72,6 +88,8 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       { name: 'Отчеты', href: '/reports', icon: '📈' },
       { name: 'Пользователи', href: '/users', icon: '👤' },
       { name: 'Логи', href: '/logs', icon: '📋' },
+      { name: 'Задачи', href: '/tasks', icon: '✅' },
+      { name: 'Зарплаты', href: '/salaries', icon: '💵' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ]
   }
