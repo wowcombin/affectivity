@@ -9,15 +9,21 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 // Получение текущего пользователя
 export async function getCurrentUser() {
-  const supabase = createClient()
+  console.log('=== GET CURRENT USER CALLED ===')
   
   try {
+    const supabase = createClient()
+    console.log('Supabase client created')
+    
     const { data: { user }, error } = await supabase.auth.getUser()
+    console.log('Supabase auth result:', { user: !!user, error })
     
     if (error || !user) {
+      console.log('No user from Supabase auth')
       return null
     }
 
+    console.log('Getting user data from database...')
     // Получаем дополнительные данные пользователя из таблицы users
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -25,10 +31,14 @@ export async function getCurrentUser() {
       .eq('id', user.id)
       .single()
 
+    console.log('Database user result:', { userData: !!userData, userError })
+
     if (userError || !userData) {
+      console.log('No user data from database')
       return null
     }
 
+    console.log('User found:', userData.username, userData.role)
     return userData
   } catch (error) {
     console.error('Error getting current user:', error)
@@ -75,24 +85,45 @@ export async function requireAuth(request: NextRequest) {
 
 // Проверка авторизации для страниц
 export async function requireAuthPage() {
-  const user = await getCurrentUser()
+  console.log('=== REQUIRE AUTH PAGE CALLED ===')
   
-  if (!user) {
-    redirect('/login')
+  try {
+    const user = await getCurrentUser()
+    console.log('Current user result:', { user: !!user, id: user?.id, username: user?.username, role: user?.role })
+    
+    if (!user) {
+      console.log('No user found, redirecting to login')
+      redirect('/login')
+    }
+    
+    console.log('User authenticated successfully')
+    return user
+  } catch (error) {
+    console.error('Auth page error:', error)
+    throw error
   }
-  
-  return user
 }
 
 // Проверка роли пользователя
 export async function requireRole(allowedRoles: UserRole[]) {
-  const user = await requireAuthPage()
+  console.log('=== REQUIRE ROLE CALLED ===')
+  console.log('Allowed roles:', allowedRoles)
   
-  if (!allowedRoles.includes(user.role as UserRole)) {
-    redirect('/unauthorized')
+  try {
+    const user = await requireAuthPage()
+    console.log('User authenticated:', { id: user.id, username: user.username, role: user.role })
+    
+    if (!allowedRoles.includes(user.role as UserRole)) {
+      console.log('User role not allowed:', user.role)
+      redirect('/unauthorized')
+    }
+    
+    console.log('Role check passed')
+    return user
+  } catch (error) {
+    console.error('Role check error:', error)
+    throw error
   }
-  
-  return user
 }
 
 // Проверка конкретной роли
@@ -105,7 +136,15 @@ export async function requireManager() {
 }
 
 export async function requireHR() {
-  return requireRole(['Admin', 'HR'])
+  console.log('=== REQUIRE HR CALLED ===')
+  try {
+    const user = await requireRole(['Admin', 'HR'])
+    console.log('HR role check passed:', user.username)
+    return user
+  } catch (error) {
+    console.error('HR role check failed:', error)
+    throw error
+  }
 }
 
 export async function requireCFO() {
