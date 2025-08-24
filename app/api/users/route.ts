@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== CREATE USER API CALLED ===')
     
+    // Создаем клиент Supabase в начале
+    const supabase = createAdminClient()
+    console.log('Supabase client created')
+    
     // Проверяем права HR
     console.log('Checking HR permissions...')
     let currentUser
@@ -94,9 +98,6 @@ export async function POST(request: NextRequest) {
     
     const userData = createUserSchema.parse(body)
     console.log('Parsed user data:', userData)
-    
-    const supabase = createAdminClient()
-    console.log('Supabase client created')
     
     // Проверяем уникальность username и email
     console.log('Checking for existing user...')
