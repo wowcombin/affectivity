@@ -403,7 +403,7 @@ export default function SalariesPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 mb-2">Формулы расчета:</h3>
                   <div className="text-sm text-blue-800 space-y-1">
-                    <div><strong>Сотрудники:</strong> 10% от брутто + $200 (если брутто > $200)</div>
+                    <div><strong>Сотрудники:</strong> 10% от брутто + $200 (если брутто &gt; $200)</div>
                     <div><strong>Менеджеры:</strong> 10% от общего брутто</div>
                     <div><strong>Лидер месяца:</strong> +10% от максимальной транзакции</div>
                     <div><strong>Курс USD:</strong> Google курс -5%</div>

@@ -57,10 +57,11 @@ export async function POST(request: NextRequest) {
       .from('employees')
       .select(`
         id,
+        user_id,
         first_name,
         last_name,
         salary,
-        user:users (
+        user:users!inner (
           role
         )
       `)
@@ -95,14 +96,7 @@ export async function POST(request: NextRequest) {
 
     for (const employee of employees) {
       // Получаем записи сотрудника за месяц
-      const employeeEntries = workEntries.filter(entry => {
-        const { data: entryUser } = await supabase
-          .from('users')
-          .select('id')
-          .eq('id', entry.user_id)
-          .single()
-        return entryUser?.id === employee.user.id
-      })
+      const employeeEntries = workEntries.filter(entry => entry.user_id === employee.user_id)
 
       const employeeGross = employeeEntries.reduce((sum, entry) => sum + entry.withdrawal_amount, 0)
       
@@ -111,7 +105,8 @@ export async function POST(request: NextRequest) {
       let leaderBonus = 0
 
       // Расчет по ролям
-      if (employee.user.role === 'Employee') {
+      const userRole = employee.user[0]?.role || 'Employee'
+      if (userRole === 'Employee') {
         // Сотрудники: 10% от брутто + $200 (если брутто > $200)
         baseSalary = employeeGross * 0.1
         if (employeeGross > 200) {
@@ -123,13 +118,13 @@ export async function POST(request: NextRequest) {
           const maxTransaction = Math.max(...employeeEntries.map(entry => entry.withdrawal_amount))
           leaderBonus = maxTransaction * 0.1
         }
-      } else if (employee.user.role === 'Manager') {
+      } else if (userRole === 'Manager') {
         // Менеджеры: 10% от общего брутто
         baseSalary = totalGross * 0.1
-      } else if (employee.user.role === 'CFO') {
+      } else if (userRole === 'CFO') {
         // CFO: 10% от общего брутто
         baseSalary = totalGross * 0.1
-      } else if (employee.user.role === 'Admin') {
+      } else if (userRole === 'Admin') {
         // Admin: 10% от общего брутто
         baseSalary = totalGross * 0.1
       }
@@ -143,7 +138,7 @@ export async function POST(request: NextRequest) {
         .insert({
           employee_id: employee.id,
           employee_name: `${employee.first_name} ${employee.last_name}`,
-          employee_role: employee.user.role,
+          employee_role: userRole,
           month: validatedData.month,
           year: new Date(validatedData.month + '-01').getFullYear(),
           base_salary: baseSalary,
