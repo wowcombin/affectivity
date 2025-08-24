@@ -47,20 +47,7 @@ export default function EmployeesPage() {
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
-    email: '',
-    phone: '',
-    position: '',
-    salary: '',
-    bank_name: '',
-    bank_country: '',
-    account_number: '',
-    sort_code: '',
-    card_number: '',
-    card_expiry: '',
-    card_cvv: '',
-    login_url: '',
-    login_username: '',
-    login_password: ''
+    email: ''
   })
   const router = useRouter()
 
@@ -119,20 +106,7 @@ export default function EmployeesPage() {
         setFormData({
           first_name: '',
           last_name: '',
-          email: '',
-          phone: '',
-          position: '',
-          salary: '',
-          bank_name: '',
-          bank_country: '',
-          account_number: '',
-          sort_code: '',
-          card_number: '',
-          card_expiry: '',
-          card_cvv: '',
-          login_url: '',
-          login_username: '',
-          login_password: ''
+          email: ''
         })
         loadEmployees()
       } else {
@@ -168,20 +142,7 @@ export default function EmployeesPage() {
         setFormData({
           first_name: '',
           last_name: '',
-          email: '',
-          phone: '',
-          position: '',
-          salary: '',
-          bank_name: '',
-          bank_country: '',
-          account_number: '',
-          sort_code: '',
-          card_number: '',
-          card_expiry: '',
-          card_cvv: '',
-          login_url: '',
-          login_username: '',
-          login_password: ''
+          email: ''
         })
         loadEmployees()
       } else {
@@ -221,25 +182,39 @@ export default function EmployeesPage() {
     }
   }
 
+  const handleFire = async (employeeId: string) => {
+    if (!confirm('Вы уверены, что хотите уволить этого сотрудника?')) {
+      return
+    }
+    
+    try {
+      const authToken = localStorage.getItem('auth-token')
+      const response = await fetch(`/api/employees/${employeeId}/fire`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+
+      if (response.ok) {
+        toast.success('Сотрудник успешно уволен!')
+        loadEmployees()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Ошибка увольнения сотрудника')
+      }
+    } catch (error) {
+      console.error('Fire error:', error)
+      toast.error('Ошибка увольнения сотрудника')
+    }
+  }
+
   const openEditForm = (employee: Employee) => {
     setEditingEmployee(employee)
     setFormData({
       first_name: employee.first_name,
       last_name: employee.last_name,
-      email: employee.email,
-      phone: employee.phone,
-      position: employee.position,
-      salary: employee.salary.toString(),
-      bank_name: employee.bank_name,
-      bank_country: employee.bank_country,
-      account_number: employee.account_number,
-      sort_code: employee.sort_code,
-      card_number: employee.card_number,
-      card_expiry: employee.card_expiry,
-      card_cvv: employee.card_cvv,
-      login_url: employee.login_url,
-      login_username: employee.login_username,
-      login_password: employee.login_password
+      email: employee.email
     })
     setShowEditForm(true)
   }
@@ -455,6 +430,14 @@ export default function EmployeesPage() {
                           >
                             ✏️ Редактировать
                           </button>
+                          {employee.is_active && ['HR', 'Manager'].includes(userRole) && (
+                            <button
+                              onClick={() => handleFire(employee.id)}
+                              className="text-orange-600 hover:text-orange-800 text-sm font-semibold"
+                            >
+                              🔥 Уволить
+                            </button>
+                          )}
                           {userRole === 'Admin' && (
                             <button
                               onClick={() => handleDelete(employee.id)}
@@ -518,205 +501,6 @@ export default function EmployeesPage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📱 Телефон
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💼 Должность
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.position}
-                      onChange={(e) => setFormData({...formData, position: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💰 Зарплата
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={formData.salary}
-                      onChange={(e) => setFormData({...formData, salary: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🏦 Название банка
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.bank_name}
-                      onChange={(e) => setFormData({...formData, bank_name: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🌍 Страна банка
-                    </label>
-                    <select
-                      value={formData.bank_country}
-                      onChange={(e) => setFormData({...formData, bank_country: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Выберите страну</option>
-                      <option value="UK">🇬🇧 UK</option>
-                      <option value="IE">🇮🇪 IE</option>
-                      <option value="DE">🇩🇪 DE</option>
-                      <option value="ES">🇪🇸 ES</option>
-                      <option value="FR">🇫🇷 FR</option>
-                      <option value="IT">🇮🇹 IT</option>
-                      <option value="NL">🇳🇱 NL</option>
-                      <option value="BE">🇧🇪 BE</option>
-                      <option value="AT">🇦🇹 AT</option>
-                      <option value="CH">🇨🇭 CH</option>
-                      <option value="PL">🇵🇱 PL</option>
-                      <option value="CZ">🇨🇿 CZ</option>
-                      <option value="HU">🇭🇺 HU</option>
-                      <option value="RO">🇷🇴 RO</option>
-                      <option value="BG">🇧🇬 BG</option>
-                      <option value="HR">🇭🇷 HR</option>
-                      <option value="SI">🇸🇮 SI</option>
-                      <option value="SK">🇸🇰 SK</option>
-                      <option value="LT">🇱🇹 LT</option>
-                      <option value="LV">🇱🇻 LV</option>
-                      <option value="EE">🇪🇪 EE</option>
-                      <option value="FI">🇫🇮 FI</option>
-                      <option value="SE">🇸🇪 SE</option>
-                      <option value="DK">🇩🇰 DK</option>
-                      <option value="NO">🇳🇴 NO</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📝 Номер счета
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.account_number}
-                      onChange={(e) => setFormData({...formData, account_number: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔢 Sort Code
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.sort_code}
-                      onChange={(e) => setFormData({...formData, sort_code: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💳 Номер карты
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.card_number}
-                      onChange={(e) => setFormData({...formData, card_number: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="1234 5678 9012 3456"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📅 Срок действия
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.card_expiry}
-                      onChange={(e) => setFormData({...formData, card_expiry: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="MM/YY"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔐 CVV
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.card_cvv}
-                      onChange={(e) => setFormData({...formData, card_cvv: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="123"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔗 Ссылка для входа
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={formData.login_url}
-                      onChange={(e) => setFormData({...formData, login_url: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      👤 Логин
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.login_username}
-                      onChange={(e) => setFormData({...formData, login_username: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔑 Пароль
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.login_password}
-                      onChange={(e) => setFormData({...formData, login_password: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -787,205 +571,6 @@ export default function EmployeesPage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📱 Телефон
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💼 Должность
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.position}
-                      onChange={(e) => setFormData({...formData, position: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💰 Зарплата
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={formData.salary}
-                      onChange={(e) => setFormData({...formData, salary: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🏦 Название банка
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.bank_name}
-                      onChange={(e) => setFormData({...formData, bank_name: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🌍 Страна банка
-                    </label>
-                    <select
-                      value={formData.bank_country}
-                      onChange={(e) => setFormData({...formData, bank_country: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Выберите страну</option>
-                      <option value="UK">🇬🇧 UK</option>
-                      <option value="IE">🇮🇪 IE</option>
-                      <option value="DE">🇩🇪 DE</option>
-                      <option value="ES">🇪🇸 ES</option>
-                      <option value="FR">🇫🇷 FR</option>
-                      <option value="IT">🇮🇹 IT</option>
-                      <option value="NL">🇳🇱 NL</option>
-                      <option value="BE">🇧🇪 BE</option>
-                      <option value="AT">🇦🇹 AT</option>
-                      <option value="CH">🇨🇭 CH</option>
-                      <option value="PL">🇵🇱 PL</option>
-                      <option value="CZ">🇨🇿 CZ</option>
-                      <option value="HU">🇭🇺 HU</option>
-                      <option value="RO">🇷🇴 RO</option>
-                      <option value="BG">🇧🇬 BG</option>
-                      <option value="HR">🇭🇷 HR</option>
-                      <option value="SI">🇸🇮 SI</option>
-                      <option value="SK">🇸🇰 SK</option>
-                      <option value="LT">🇱🇹 LT</option>
-                      <option value="LV">🇱🇻 LV</option>
-                      <option value="EE">🇪🇪 EE</option>
-                      <option value="FI">🇫🇮 FI</option>
-                      <option value="SE">🇸🇪 SE</option>
-                      <option value="DK">🇩🇰 DK</option>
-                      <option value="NO">🇳🇴 NO</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📝 Номер счета
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.account_number}
-                      onChange={(e) => setFormData({...formData, account_number: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔢 Sort Code
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.sort_code}
-                      onChange={(e) => setFormData({...formData, sort_code: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      💳 Номер карты
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.card_number}
-                      onChange={(e) => setFormData({...formData, card_number: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="1234 5678 9012 3456"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      📅 Срок действия
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.card_expiry}
-                      onChange={(e) => setFormData({...formData, card_expiry: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="MM/YY"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔐 CVV
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.card_cvv}
-                      onChange={(e) => setFormData({...formData, card_cvv: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="123"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔗 Ссылка для входа
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={formData.login_url}
-                      onChange={(e) => setFormData({...formData, login_url: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="https://..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      👤 Логин
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.login_username}
-                      onChange={(e) => setFormData({...formData, login_username: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      🔑 Пароль
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.login_password}
-                      onChange={(e) => setFormData({...formData, login_password: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>

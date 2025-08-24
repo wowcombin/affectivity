@@ -152,6 +152,38 @@ export default function UsersPage() {
     return isActive ? '✅' : '❌'
   }
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этого пользователя? Это действие нельзя отменить.')) {
+      return
+    }
+    
+    try {
+      const authToken = localStorage.getItem('auth-token')
+      if (!authToken) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+
+      if (response.ok) {
+        toast.success('Пользователь успешно удален!')
+        loadUsers()
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Ошибка удаления пользователя')
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      toast.error('Ошибка удаления пользователя')
+    }
+  }
+
   if (userRole !== 'Admin') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
@@ -364,6 +396,9 @@ export default function UsersPage() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     🕒 Последний вход
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    ⚙️ Действия
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white/30 divide-y divide-white/20">
@@ -404,6 +439,14 @@ export default function UsersPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {user.last_login ? `🕒 ${formatDate(user.last_login)}` : 'Никогда'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Button
+                        onClick={() => handleDeleteUser(user.id)}
+                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1 rounded-lg text-sm"
+                      >
+                        🗑️ Удалить
+                      </Button>
                     </td>
                   </tr>
                 ))}
