@@ -9,16 +9,16 @@ import { toast } from 'sonner'
 
 interface Employee {
   id: string
-  user_id: string
-  hire_date: string
+  username: string
+  email: string
+  full_name: string | null
+  role: string
+  usdt_address: string | null
+  usdt_network: string
   is_active: boolean
-  users: {
-    username: string
-    full_name: string
-    email: string
-    role: string
-    usdt_address: string | null
-  }
+  created_at: string
+  last_login: string | null
+  created_by: string | null
 }
 
 export default function EmployeesPage() {
@@ -261,27 +261,27 @@ export default function EmployeesPage() {
                         <div className="flex-shrink-0 h-12 w-12">
                           <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
                             <span className="text-lg font-bold text-white">
-                              {employee.users.full_name?.charAt(0) || employee.users.username.charAt(0)}
+                              {employee.full_name?.charAt(0) || employee.username.charAt(0)}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-bold text-gray-900">
-                            {employee.users.full_name || 'Не указано'}
+                            {employee.full_name || 'Не указано'}
                           </div>
                           <div className="text-sm text-gray-600">
-                            @{employee.users.username} • {employee.users.email}
+                            @{employee.username} • {employee.email}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border border-blue-200">
-                        {employee.users.role}
+                        {employee.role}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(employee.hire_date)}
+                      {formatDate(employee.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
@@ -293,9 +293,9 @@ export default function EmployeesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {employee.users.usdt_address ? (
+                      {employee.usdt_address ? (
                         <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded-lg">
-                          {employee.users.usdt_address.slice(0, 10)}...{employee.users.usdt_address.slice(-8)}
+                          {employee.usdt_address.slice(0, 10)}...{employee.usdt_address.slice(-8)}
                         </span>
                       ) : (
                         <span className="text-gray-400 italic">Не указан</span>
@@ -306,7 +306,7 @@ export default function EmployeesPage() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleFireEmployee(employee.id, employee.users.username)}
+                          onClick={() => handleFireEmployee(employee.id, employee.username)}
                           className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-3 py-1 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                         >
                           🚫 Уволить
