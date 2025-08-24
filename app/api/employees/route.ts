@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('=== GET TRANSACTIONS API CALLED ===')
+    console.log('=== GET EMPLOYEES API CALLED ===')
     
     // Создаем клиент Supabase в начале
     const supabase = createAdminClient()
@@ -60,55 +60,42 @@ export async function GET(request: NextRequest) {
       currentUser = user
       console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
       
-      // Только Admin, CFO и Manager могут видеть транзакции
-      if (!['Admin', 'CFO', 'Manager'].includes(currentUser.role)) {
-        console.log('User role not allowed for transactions access:', currentUser.role)
+      // Только Admin и CFO могут видеть сотрудников
+      if (!['Admin', 'CFO'].includes(currentUser.role)) {
+        console.log('User role not allowed for employees access:', currentUser.role)
         return NextResponse.json(
-          { error: 'Недостаточно прав для просмотра транзакций. Требуется роль Admin, CFO или Manager.' },
+          { error: 'Недостаточно прав для просмотра сотрудников. Требуется роль Admin или CFO.' },
           { status: 403 }
         )
       }
     } catch (authError) {
       console.error('Auth check failed:', authError)
       return NextResponse.json(
-        { error: 'Недостаточно прав для просмотра транзакций', details: authError.message },
+        { error: 'Недостаточно прав для просмотра сотрудников', details: authError.message },
         { status: 403 }
       )
     }
 
-    const { data: transactions, error } = await supabase
-      .from('transactions')
-      .select(`
-        *,
-        cards (
-          card_number,
-          card_type
-        ),
-        casinos (
-          name
-        ),
-        employees (
-          username,
-          full_name
-        )
-      `)
+    const { data: employees, error } = await supabase
+      .from('users')
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('Error fetching transactions:', error)
-      return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 })
+      console.error('Error fetching employees:', error)
+      return NextResponse.json({ error: 'Failed to fetch employees' }, { status: 500 })
     }
 
-    return NextResponse.json({ transactions: transactions || [] })
+    return NextResponse.json({ employees: employees || [] })
   } catch (error) {
-    console.error('Error in GET /api/transactions:', error)
+    console.error('Error in GET /api/employees:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('=== POST TRANSACTIONS API CALLED ===')
+    console.log('=== POST EMPLOYEES API CALLED ===')
     
     // Создаем клиент Supabase в начале
     const supabase = createAdminClient()
@@ -167,59 +154,71 @@ export async function POST(request: NextRequest) {
       currentUser = user
       console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
       
-      // Только Admin, CFO и Manager могут создавать транзакции
-      if (!['Admin', 'CFO', 'Manager'].includes(currentUser.role)) {
-        console.log('User role not allowed for transaction creation:', currentUser.role)
+      // Только Admin может создавать сотрудников
+      if (currentUser.role !== 'Admin') {
+        console.log('User role not allowed for employee creation:', currentUser.role)
         return NextResponse.json(
-          { error: 'Недостаточно прав для создания транзакций. Требуется роль Admin, CFO или Manager.' },
+          { error: 'Недостаточно прав для создания сотрудников. Требуется роль Admin.' },
           { status: 403 }
         )
       }
     } catch (authError) {
       console.error('Auth check failed:', authError)
       return NextResponse.json(
-        { error: 'Недостаточно прав для создания транзакций', details: authError.message },
+        { error: 'Недостаточно прав для создания сотрудников', details: authError.message },
         { status: 403 }
       )
     }
 
-    const { employee_id, card_id, casino_id, transaction_type, amount, profit, status, notes } = body
+    const { username, email, full_name, role, password } = body
 
     // Валидация
-    if (!employee_id || !card_id || !casino_id || !transaction_type || !amount) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    if (!username || !email || !password) {
+      return NextResponse.json({ error: 'Username, email and password are required' }, { status: 400 })
     }
 
-    if (!['deposit', 'withdrawal'].includes(transaction_type)) {
-      return NextResponse.json({ error: 'Invalid transaction type' }, { status: 400 })
+    // Проверяем, что пользователь с таким username не существует
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('username', username)
+      .single()
+
+    if (existingUser) {
+      return NextResponse.json({ error: 'User with this username already exists' }, { status: 400 })
     }
 
-    const transactionData = {
-      employee_id,
-      card_id,
-      casino_id,
-      transaction_type,
-      amount: parseFloat(amount),
-      profit: profit ? parseFloat(profit) : 0,
-      status: status || 'pending',
-      transaction_date: new Date().toISOString(),
-      notes: notes || null
+    // Хешируем пароль
+    const bcrypt = require('bcryptjs')
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    const employeeData = {
+      username,
+      email,
+      full_name: full_name || null,
+      role: role || 'Employee',
+      password: hashedPassword,
+      is_active: true,
+      created_by: currentUser.id
     }
 
     const { data, error } = await supabase
-      .from('transactions')
-      .insert(transactionData)
+      .from('users')
+      .insert(employeeData)
       .select()
       .single()
 
     if (error) {
-      console.error('Error creating transaction:', error)
-      return NextResponse.json({ error: 'Failed to create transaction' }, { status: 500 })
+      console.error('Error creating employee:', error)
+      return NextResponse.json({ error: 'Failed to create employee' }, { status: 500 })
     }
 
-    return NextResponse.json({ transaction: data })
+    // Убираем пароль из ответа
+    const { password: _, ...employeeWithoutPassword } = data
+
+    return NextResponse.json({ employee: employeeWithoutPassword })
   } catch (error) {
-    console.error('Error in POST /api/transactions:', error)
+    console.error('Error in POST /api/employees:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

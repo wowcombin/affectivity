@@ -9,26 +9,26 @@ import { toast } from 'sonner'
 
 interface Transaction {
   id: string
-  amount_usd: number
-  transaction_type: string
-  status: string
-  casino_id: string
-  card_id: string
   employee_id: string
+  card_id: string
+  casino_id: string
+  transaction_type: string
+  amount: number
+  profit: number
+  status: string
+  transaction_date: string
+  notes: string | null
   created_at: string
-  casinos: {
-    name: string
-    url: string
-  }
   cards: {
     card_number: string
     card_type: string
   }
+  casinos: {
+    name: string
+  }
   employees: {
-    users: {
-      username: string
-      full_name: string
-    }
+    username: string
+    full_name: string
   }
 }
 
@@ -52,16 +52,29 @@ export default function TransactionsPage() {
 
   const loadTransactions = async () => {
     try {
-      const response = await fetch('/api/transactions')
+      const authToken = localStorage.getItem('auth-token')
+      if (!authToken) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/transactions', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+      
+      console.log('Transactions response:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
-        setTransactions(data.transactions)
+        setTransactions(data.transactions || [])
       } else {
         console.error('Failed to load transactions')
         toast.error('Ошибка загрузки транзакций')
       }
     } catch (error) {
-      console.error('Error loading transactions:', error)
+      console.error('Transactions error:', error)
       toast.error('Ошибка загрузки транзакций')
     } finally {
       setIsLoading(false)
@@ -291,25 +304,20 @@ export default function TransactionsPage() {
                       <div className="text-sm font-bold text-gray-900">
                         {transaction.casinos.name}
                       </div>
-                      <div className="text-sm text-gray-600">
-                        <a href={transaction.casinos.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                          {transaction.casinos.url}
-                        </a>
-                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-gray-900">
-                        {transaction.employees.users.full_name || transaction.employees.users.username}
+                        {transaction.employees.full_name || transaction.employees.username}
                       </div>
                       <div className="text-sm text-gray-600">
-                        @{transaction.employees.users.username}
+                        @{transaction.employees.username}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={`text-sm font-bold ${
                         transaction.transaction_type === 'deposit' ? 'text-green-600' : 'text-red-600'
                       } bg-white/70 px-3 py-1 rounded-lg inline-block`}>
-                        {transaction.transaction_type === 'deposit' ? '+' : '-'}{formatCurrency(transaction.amount_usd)}
+                        {transaction.transaction_type === 'deposit' ? '+' : '-'}{formatCurrency(transaction.amount)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

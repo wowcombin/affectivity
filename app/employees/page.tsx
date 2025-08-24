@@ -47,18 +47,29 @@ export default function EmployeesPage() {
 
   const loadEmployees = async () => {
     try {
-      const token = localStorage.getItem('auth-token')
-      const response = await fetch('/api/users', {
+      const authToken = localStorage.getItem('auth-token')
+      if (!authToken) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/employees', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+          'Authorization': `Bearer ${authToken}`
+        }
       })
+      
+      console.log('Employees response:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
-        setEmployees(data.users)
+        setEmployees(data.employees || [])
+      } else {
+        console.error('Failed to load employees')
+        toast.error('Ошибка загрузки сотрудников')
       }
     } catch (error) {
-      console.error('Error loading employees:', error)
+      console.error('Employees error:', error)
       toast.error('Ошибка загрузки сотрудников')
     } finally {
       setIsLoading(false)
@@ -69,12 +80,17 @@ export default function EmployeesPage() {
     e.preventDefault()
     
     try {
-      const token = localStorage.getItem('auth-token')
-      const response = await fetch('/api/users', {
+      const authToken = localStorage.getItem('auth-token')
+      if (!authToken) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/employees', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify(formData),
       })
@@ -91,8 +107,8 @@ export default function EmployeesPage() {
         })
         loadEmployees()
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Ошибка создания сотрудника')
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Ошибка создания сотрудника')
       }
     } catch (error) {
       console.error('Error creating employee:', error)
