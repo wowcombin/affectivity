@@ -45,6 +45,28 @@ async function createDatabaseTables() {
     `)
     console.log('Bank accounts table created successfully')
     
+    // Создаем таблицу карт
+    console.log('Creating cards table...')
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS cards (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        bank_account_id UUID NOT NULL REFERENCES bank_accounts(id) ON DELETE CASCADE,
+        card_number VARCHAR(255) NOT NULL,
+        expiry_date VARCHAR(5) NOT NULL,
+        cvv VARCHAR(4) NOT NULL,
+        card_type VARCHAR(10) NOT NULL CHECK (card_type IN ('pink', 'gray')),
+        status VARCHAR(20) NOT NULL DEFAULT 'free' CHECK (status IN ('free', 'assigned', 'in_process', 'completed')),
+        assigned_employee_id UUID REFERENCES users(id),
+        assigned_casino_id UUID REFERENCES casinos(id),
+        deposit_amount DECIMAL(15,2),
+        withdrawal_amount DECIMAL(15,2),
+        profit DECIMAL(15,2),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+    `)
+    console.log('Cards table created successfully')
+    
     // Добавляем тестовые данные
     console.log('Adding test data...')
     
@@ -66,6 +88,7 @@ async function createDatabaseTables() {
     console.log('Enabling RLS...')
     await client.query('ALTER TABLE banks ENABLE ROW LEVEL SECURITY;')
     await client.query('ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;')
+    await client.query('ALTER TABLE cards ENABLE ROW LEVEL SECURITY;')
     
     // Создаем политики для банков
     console.log('Creating policies...')
@@ -94,15 +117,30 @@ async function createDatabaseTables() {
         );
     `)
     
+    // Создаем политики для карт
+    await client.query(`
+      DROP POLICY IF EXISTS "CFO can manage cards" ON cards;
+      CREATE POLICY "CFO can manage cards" ON cards
+        FOR ALL USING (
+          EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.uid() 
+              AND role IN ('Admin', 'CFO', 'Manager')
+          )
+        );
+    `)
+    
     console.log('Policies created successfully')
     
     // Проверяем результат
     const { rows: banks } = await client.query('SELECT * FROM banks')
     const { rows: accounts } = await client.query('SELECT * FROM bank_accounts')
+    const { rows: cards } = await client.query('SELECT * FROM cards')
     
     console.log('=== DATABASE SETUP COMPLETED ===')
     console.log('Banks count:', banks.length)
     console.log('Bank accounts count:', accounts.length)
+    console.log('Cards count:', cards.length)
     
   } catch (error) {
     console.error('Error creating database tables:', error)
