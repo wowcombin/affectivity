@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('Login successful for user:', username)
+    console.log('Generated token:', token ? 'Present' : 'Not generated')
 
     const response = {
       user: {

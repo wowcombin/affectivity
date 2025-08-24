@@ -172,7 +172,17 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 
 // Генерация JWT токена
 export function generateToken(payload: any): string {
-  return jwt.sign(payload, process.env.SUPABASE_JWT_SECRET!, { expiresIn: '7d' })
+  console.log('=== GENERATE TOKEN CALLED ===')
+  console.log('Payload:', payload)
+  console.log('JWT Secret present:', !!process.env.SUPABASE_JWT_SECRET)
+  
+  if (!process.env.SUPABASE_JWT_SECRET) {
+    throw new Error('SUPABASE_JWT_SECRET is not configured')
+  }
+  
+  const token = jwt.sign(payload, process.env.SUPABASE_JWT_SECRET, { expiresIn: '7d' })
+  console.log('Token generated successfully')
+  return token
 }
 
 // Верификация JWT токена
