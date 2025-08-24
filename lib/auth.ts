@@ -49,8 +49,16 @@ export async function getCurrentUser() {
 // Проверка авторизации для API
 export async function requireAuth(request: NextRequest) {
   try {
-    // Получаем токен из cookies
-    const authToken = request.cookies.get('auth-token')?.value
+    // Получаем токен из cookies или заголовка Authorization
+    let authToken = request.cookies.get('auth-token')?.value
+    
+    if (!authToken) {
+      // Пробуем получить из заголовка Authorization
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        authToken = authHeader.substring(7)
+      }
+    }
 
     if (!authToken) {
       throw new Error('No auth token')

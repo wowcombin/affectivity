@@ -47,7 +47,12 @@ export default function EmployeesPage() {
 
   const loadEmployees = async () => {
     try {
-      const response = await fetch('/api/users')
+      const token = localStorage.getItem('auth-token')
+      const response = await fetch('/api/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
       if (response.ok) {
         const data = await response.json()
         setEmployees(data.users)
@@ -64,10 +69,12 @@ export default function EmployeesPage() {
     e.preventDefault()
     
     try {
+      const token = localStorage.getItem('auth-token')
       const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       })
@@ -99,10 +106,12 @@ export default function EmployeesPage() {
     }
 
     try {
+      const token = localStorage.getItem('auth-token')
       const response = await fetch('/api/employees/fire', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ employee_id: employeeId }),
       })
