@@ -6,8 +6,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Пропускаем страницу логина
-  if (request.nextUrl.pathname.startsWith('/login')) {
+  // Пропускаем страницу логина и auth
+  if (request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/auth')) {
+    return NextResponse.next()
+  }
+
+  // Пропускаем статические файлы
+  if (request.nextUrl.pathname.startsWith('/_next/') || request.nextUrl.pathname.startsWith('/favicon')) {
     return NextResponse.next()
   }
 
