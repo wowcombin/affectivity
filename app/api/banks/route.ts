@@ -5,12 +5,76 @@ import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireAuth(request)
+    console.log('=== GET BANKS API CALLED ===')
+    
+    // Создаем клиент Supabase в начале
     const supabase = createAdminClient()
+    console.log('Supabase client created')
+    
+    // Проверяем права доступа
+    console.log('Checking permissions...')
+    let currentUser
+    try {
+      // Простая проверка аутентификации прямо здесь
+      let authToken = request.cookies.get('auth-token')?.value
+      
+      if (!authToken) {
+        const authHeader = request.headers.get('authorization')
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          authToken = authHeader.substring(7)
+        }
+      }
 
-    // Только CFO и Admin могут видеть банки
-    if (!['Admin', 'CFO'].includes(user.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      if (!authToken) {
+        return NextResponse.json(
+          { error: 'No auth token' },
+          { status: 401 }
+        )
+      }
+
+      // Верифицируем токен
+      const jwt = require('jsonwebtoken')
+      const decoded = jwt.verify(authToken, process.env.SUPABASE_JWT_SECRET)
+      
+      if (!decoded) {
+        return NextResponse.json(
+          { error: 'Invalid token' },
+          { status: 401 }
+        )
+      }
+
+      // Получаем пользователя из базы
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', decoded.userId)
+        .eq('is_active', true)
+        .single()
+
+      if (error || !user) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        )
+      }
+
+      currentUser = user
+      console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
+      
+      // Только CFO и Admin могут видеть банки
+      if (!['Admin', 'CFO'].includes(currentUser.role)) {
+        console.log('User role not allowed for banks access:', currentUser.role)
+        return NextResponse.json(
+          { error: 'Недостаточно прав для просмотра банков. Требуется роль Admin или CFO.' },
+          { status: 403 }
+        )
+      }
+    } catch (authError) {
+      console.error('Auth check failed:', authError)
+      return NextResponse.json(
+        { error: 'Недостаточно прав для просмотра банков', details: authError.message },
+        { status: 403 }
+      )
     }
 
     const { data: banks, error } = await supabase
@@ -32,13 +96,79 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth(request)
+    console.log('=== POST BANKS API CALLED ===')
+    
+    // Создаем клиент Supabase в начале
     const supabase = createAdminClient()
+    console.log('Supabase client created')
+    
     const body = await request.json()
+    console.log('Request body:', body)
+    
+    // Проверяем права доступа
+    console.log('Checking permissions...')
+    let currentUser
+    try {
+      // Простая проверка аутентификации прямо здесь
+      let authToken = request.cookies.get('auth-token')?.value
+      
+      if (!authToken) {
+        const authHeader = request.headers.get('authorization')
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          authToken = authHeader.substring(7)
+        }
+      }
 
-    // Только CFO и Admin могут создавать банки
-    if (!['Admin', 'CFO'].includes(user.role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      if (!authToken) {
+        return NextResponse.json(
+          { error: 'No auth token' },
+          { status: 401 }
+        )
+      }
+
+      // Верифицируем токен
+      const jwt = require('jsonwebtoken')
+      const decoded = jwt.verify(authToken, process.env.SUPABASE_JWT_SECRET)
+      
+      if (!decoded) {
+        return NextResponse.json(
+          { error: 'Invalid token' },
+          { status: 401 }
+        )
+      }
+
+      // Получаем пользователя из базы
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', decoded.userId)
+        .eq('is_active', true)
+        .single()
+
+      if (error || !user) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        )
+      }
+
+      currentUser = user
+      console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
+      
+      // Только CFO и Admin могут создавать банки
+      if (!['Admin', 'CFO'].includes(currentUser.role)) {
+        console.log('User role not allowed for banks creation:', currentUser.role)
+        return NextResponse.json(
+          { error: 'Недостаточно прав для создания банков. Требуется роль Admin или CFO.' },
+          { status: 403 }
+        )
+      }
+    } catch (authError) {
+      console.error('Auth check failed:', authError)
+      return NextResponse.json(
+        { error: 'Недостаточно прав для создания банков', details: authError.message },
+        { status: 403 }
+      )
     }
 
     const { name, type } = body
