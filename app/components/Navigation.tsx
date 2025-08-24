@@ -33,19 +33,15 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
   // Группируем навигацию по ролям
   const roleNavigation = {
     'HR': [
+      { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Сотрудники', href: '/employees', icon: '👥' },
-      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
-      { name: 'NDA документы', href: '/nda-documents', icon: '📄' },
-      { name: 'Задачи', href: '/tasks', icon: '✅' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Manager': [
+      { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Сотрудники', href: '/employees', icon: '👥' },
-      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
-      { name: 'Проверка выводов', href: '/withdrawal-checks', icon: '🔍' },
-      { name: 'Задачи', href: '/tasks', icon: '✅' },
-      { name: 'Назначение карт', href: '/card-assignments', icon: '💳' },
-      { name: 'Статистика', href: '/statistics', icon: '📊' },
+      { name: 'Карты', href: '/cards', icon: '💳' },
+      { name: 'Транзакции', href: '/transactions', icon: '💰' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'CFO': [
@@ -59,17 +55,11 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Tester': [
-      { name: 'Тестовые сайты', href: '/test-sites', icon: '🧪' },
-      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
-      { name: 'Активные сайты', href: '/active-sites', icon: '🌐' },
-      { name: 'Задачи', href: '/tasks', icon: '✅' },
+      { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Employee': [
-      { name: 'Мой рабочий файл', href: '/my-work-file', icon: '📋' },
-      { name: 'Мои задачи', href: '/my-tasks', icon: '✅' },
-      { name: 'Моя статистика', href: '/my-stats', icon: '📊' },
-      { name: 'Лидеры месяца', href: '/monthly-leaders', icon: '🏆' },
+      { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Admin': [

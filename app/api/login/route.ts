@@ -1,0 +1,110 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyPassword, generateToken, logActivity, getClientIP } from '@/lib/auth'
+import { z } from 'zod'
+
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required')
+})
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { username, password } = loginSchema.parse(body)
+    
+    const supabase = createAdminClient()
+    const clientIP = getClientIP(request)
+    
+    console.log('Login attempt for username:', username)
+    
+    // Получаем пользователя по username
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .eq('is_active', true)
+      .single()
+
+    console.log('User query result:', { user, userError })
+
+    if (userError || !user) {
+      console.log('User not found or error:', userError)
+      return NextResponse.json(
+        { error: 'Неверное имя пользователя или пароль' },
+        { status: 401 }
+      )
+    }
+
+    // Проверяем пароль
+    const isValidPassword = await verifyPassword(password, user.password_hash)
+    console.log('Password validation result:', isValidPassword)
+    
+    if (!isValidPassword) {
+      console.log('Invalid password for user:', username)
+      return NextResponse.json(
+        { error: 'Неверное имя пользователя или пароль' },
+        { status: 401 }
+      )
+    }
+
+    // Обновляем время последнего входа
+    await supabase
+      .from('users')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', user.id)
+
+    // Генерируем JWT токен
+    const token = generateToken({
+      userId: user.id,
+      username: user.username,
+      role: user.role
+    })
+
+    console.log('Login successful for user:', username)
+    console.log('Generated token:', token ? 'Present' : 'Not generated')
+
+    const response = {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role,
+        usdt_address: user.usdt_address,
+        usdt_network: user.usdt_network
+      },
+      token
+    }
+
+    console.log('Sending response:', response)
+
+    const nextResponse = NextResponse.json(response)
+    
+    // Устанавливаем cookie
+    nextResponse.cookies.set('auth-token', token, {
+      httpOnly: false,
+      secure: false, // false для локальной разработки
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 дней
+      path: '/'
+    })
+
+    return nextResponse
+
+  } catch (error) {
+    console.error('Login error:', error)
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Неверные данные для входа' },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Внутренняя ошибка сервера' },
+      { status: 500 }
+    )
+  }
+}

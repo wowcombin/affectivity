@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAuth, validateBEP20Address, logActivity, getClientIP } from '@/lib/auth'
+import { verifyToken, validateBEP20Address, logActivity, getClientIP } from '@/lib/auth'
 import { z } from 'zod'
 
 const updateAddressSchema = z.object({
@@ -12,8 +11,37 @@ const updateAddressSchema = z.object({
 export async function PUT(request: NextRequest) {
   try {
     // Проверяем авторизацию
-    const currentUser = await requireAuth()
-    const clientIP = getClientIP(request)
+    let authToken = request.cookies.get('auth-token')?.value
+    
+    if (!authToken) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        authToken = authHeader.substring(7)
+      }
+    }
+
+    if (!authToken) {
+      return NextResponse.json({ error: 'No auth token' }, { status: 401 })
+    }
+
+    const decoded = verifyToken(authToken)
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
+    
+    // Получаем данные пользователя
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decoded.userId)
+      .eq('is_active', true)
+      .single()
+
+    if (userError || !currentUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
     
     const body = await request.json()
     const { usdt_address, usdt_network } = updateAddressSchema.parse(body)
@@ -25,8 +53,8 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const supabase = createAdminClient()
+    
+    const clientIP = getClientIP(request)
     
     // Получаем текущий адрес для логирования
     const { data: currentUserData } = await supabase
@@ -64,8 +92,8 @@ export async function PUT(request: NextRequest) {
         new_address: usdt_address,
         network: usdt_network
       },
-      clientIP,
-      request.headers.get('user-agent')
+      clientIP || undefined,
+      request.headers.get('user-agent') || undefined
     )
 
     return NextResponse.json({
@@ -95,9 +123,34 @@ export async function PUT(request: NextRequest) {
 // Получение текущего USDT адреса
 export async function GET(request: NextRequest) {
   try {
-    const currentUser = await requireAuth()
+    let authToken = request.cookies.get('auth-token')?.value
+    
+    if (!authToken) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        authToken = authHeader.substring(7)
+      }
+    }
+
+    if (!authToken) {
+      return NextResponse.json({ error: 'No auth token' }, { status: 401 })
+    }
+
+    const decoded = verifyToken(authToken)
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
     const supabase = createAdminClient()
     
+    // Получаем данные пользователя
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', decoded.userId)
+      .eq('is_active', true)
+      .single()
+
     const { data: userData, error } = await supabase
       .from('users')
       .select('usdt_address, usdt_network')
