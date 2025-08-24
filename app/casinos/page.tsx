@@ -11,13 +11,9 @@ interface Casino {
   id: string
   name: string
   url: string
-  status: string
+  commission_rate: number | null
+  is_active: boolean
   created_at: string
-  added_by: string
-  users: {
-    username: string
-    full_name: string
-  }
 }
 
 export default function CasinosPage() {
@@ -28,7 +24,7 @@ export default function CasinosPage() {
   const [formData, setFormData] = useState({
     name: '',
     url: '',
-    status: 'active'
+    commission_rate: 0
   })
   const router = useRouter()
 
@@ -44,39 +40,29 @@ export default function CasinosPage() {
 
   const loadCasinos = async () => {
     try {
-      // Пока используем моковые данные
-      const mockCasinos: Casino[] = [
-        {
-          id: '1',
-          name: 'Casino Royal',
-          url: 'https://casinoroyal.com',
-          status: 'active',
-          created_at: new Date().toISOString(),
-          added_by: '1',
-          users: { username: 'admin', full_name: 'System Administrator' }
-        },
-        {
-          id: '2',
-          name: 'Lucky Stars',
-          url: 'https://luckystars.com',
-          status: 'active',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          added_by: '1',
-          users: { username: 'admin', full_name: 'System Administrator' }
-        },
-        {
-          id: '3',
-          name: 'Golden Palace',
-          url: 'https://goldenpalace.com',
-          status: 'inactive',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          added_by: '1',
-          users: { username: 'admin', full_name: 'System Administrator' }
+      const authToken = localStorage.getItem('auth-token')
+      if (!authToken) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/casinos', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
         }
-      ]
-      setCasinos(mockCasinos)
+      })
+      
+      console.log('Casinos response:', response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setCasinos(data.casinos || [])
+      } else {
+        console.error('Failed to load casinos')
+        toast.error('Ошибка загрузки казино')
+      }
     } catch (error) {
-      console.error('Error loading casinos:', error)
+      console.error('Casinos error:', error)
       toast.error('Ошибка загрузки казино')
     } finally {
       setIsLoading(false)
@@ -87,15 +73,34 @@ export default function CasinosPage() {
     e.preventDefault()
     
     try {
-      // Здесь будет API для добавления казино
-      toast.success('Казино успешно добавлено!')
-      setShowAddForm(false)
-      setFormData({
-        name: '',
-        url: '',
-        status: 'active'
+      const authToken = localStorage.getItem('auth-token')
+      if (!authToken) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch('/api/casinos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify(formData),
       })
-      loadCasinos()
+
+      if (response.ok) {
+        toast.success('Казино успешно добавлено!')
+        setShowAddForm(false)
+        setFormData({
+          name: '',
+          url: '',
+          commission_rate: 0
+        })
+        loadCasinos()
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Ошибка добавления казино')
+      }
     } catch (error) {
       console.error('Error adding casino:', error)
       toast.error('Ошибка добавления казино')
@@ -202,7 +207,7 @@ export default function CasinosPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Заблокированных</h3>
                 <p className="text-3xl font-bold text-red-600">
-                  {casinos.filter(c => c.status === 'suspended').length}
+                  {casinos.filter(c => !c.is_active).length}
                 </p>
               </div>
             </div>
@@ -236,7 +241,7 @@ export default function CasinosPage() {
                     📊 Статус
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    👤 Добавил
+                    💰 Комиссия
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     📅 Дата
@@ -274,20 +279,18 @@ export default function CasinosPage() {
                       </a>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getStatusColor(casino.status)} text-white shadow-lg`}>
-                        {getStatusIcon(casino.status)} {
-                          casino.status === 'active' ? 'Активно' :
-                          casino.status === 'inactive' ? 'Неактивно' :
-                          casino.status === 'suspended' ? 'Заблокировано' : casino.status
+                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getStatusColor(casino.is_active ? 'active' : 'inactive')} text-white shadow-lg`}>
+                        {getStatusIcon(casino.is_active ? 'active' : 'inactive')} {
+                          casino.is_active ? 'Активно' : 'Неактивно'
                         }
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-gray-900">
-                        {casino.users?.full_name || casino.users?.username || 'Система'}
+                        {casino.commission_rate ? `${casino.commission_rate}%` : 'Не указана'}
                       </div>
                       <div className="text-sm text-gray-600">
-                        @{casino.users?.username || 'admin'}
+                        Комиссия
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -345,17 +348,18 @@ export default function CasinosPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    📊 Статус
+                    💰 Комиссия (%)
                   </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={formData.commission_rate}
+                    onChange={(e) => setFormData({...formData, commission_rate: parseFloat(e.target.value) || 0})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
-                  >
-                    <option value="active">✅ Активно</option>
-                    <option value="inactive">⏸️ Неактивно</option>
-                    <option value="suspended">🚫 Заблокировано</option>
-                  </select>
+                    placeholder="0.00"
+                  />
                 </div>
                 <div className="flex justify-end space-x-3 pt-4">
                   <Button
