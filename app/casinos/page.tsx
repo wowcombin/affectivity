@@ -181,7 +181,7 @@ export default function CasinosPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Активных</h3>
                 <p className="text-3xl font-bold text-green-600">
-                  {casinos.filter(c => c.status === 'active').length}
+                  {casinos.filter(c => c.is_active).length}
                 </p>
               </div>
             </div>
@@ -194,7 +194,7 @@ export default function CasinosPage() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Неактивных</h3>
                 <p className="text-3xl font-bold text-gray-600">
-                  {casinos.filter(c => c.status === 'inactive').length}
+                  {casinos.filter(c => !c.is_active).length}
                 </p>
               </div>
             </div>
