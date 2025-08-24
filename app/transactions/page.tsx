@@ -113,7 +113,7 @@ export default function TransactionsPage() {
   }
 
   const getTotalAmount = () => {
-    return getFilteredTransactions().reduce((sum, t) => sum + t.amount_usd, 0)
+    return getFilteredTransactions().reduce((sum, t) => sum + t.amount, 0)
   }
 
   const getStatusColor = (status: string) => {
