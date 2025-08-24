@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireHR, hashPassword, generateTemporaryPassword, validateBEP20Address, logActivity, getClientIP } from '@/lib/auth'
+import { requireHR, requireAuth, hashPassword, generateTemporaryPassword, validateBEP20Address, logActivity, getClientIP } from '@/lib/auth'
 import { z } from 'zod'
 import { UserRole } from '@/types/database'
 
@@ -10,7 +10,7 @@ const createUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   full_name: z.string().optional(),
   phone: z.string().optional(),
-  role: z.enum(['Employee', 'Tester'] as const),
+  role: z.enum(['Employee', 'Tester', 'Manager', 'HR', 'CFO'] as const),
   usdt_address: z.string().optional(),
   usdt_network: z.string().default('BEP20'),
   send_nda: z.boolean().default(false)
