@@ -342,14 +342,7 @@ export async function GET(request: NextRequest) {
         is_active,
         created_at,
         last_login,
-        created_by,
-        salary_calculations (
-          id,
-          base_salary,
-          bonus_percentage,
-          total_earned,
-          is_active
-        )
+        created_by
       `)
       .order('created_at', { ascending: false })
 
