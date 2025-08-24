@@ -337,7 +337,7 @@ export default function EmployeesPage() {
                     required
                     value={formData.username}
                     onChange={(e) => setFormData({...formData, username: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
                     placeholder="Введите имя пользователя"
                   />
                 </div>
@@ -350,7 +350,7 @@ export default function EmployeesPage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
                     placeholder="Введите email"
                   />
                 </div>
@@ -363,7 +363,7 @@ export default function EmployeesPage() {
                     required
                     value={formData.full_name}
                     onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
                     placeholder="Введите полное имя"
                   />
                 </div>
@@ -374,7 +374,7 @@ export default function EmployeesPage() {
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
                   >
                     <option value="Employee">👤 Employee</option>
                     <option value="Tester">🧪 Tester</option>
@@ -392,7 +392,7 @@ export default function EmployeesPage() {
                     required
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
                     placeholder="Введите пароль"
                   />
                 </div>
@@ -401,7 +401,7 @@ export default function EmployeesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setShowCreateForm(false)}
-                    className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900"
+                    className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900 bg-white"
                   >
                     ❌ Отмена
                   </Button>

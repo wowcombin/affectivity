@@ -79,22 +79,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Создаем запись в таблице employees для Employee и Tester
+    // Создаем запись в таблице salary_calculations для Employee и Tester
     if (userData.role === 'Employee' || userData.role === 'Tester') {
-      const { error: employeeError } = await supabase
-        .from('employees')
+      const { error: salaryError } = await supabase
+        .from('salary_calculations')
         .insert({
           user_id: newUser.id,
-          percentage_rate: 10.00,
+          base_salary: 0,
+          bonus_percentage: 10.00,
+          total_earned: 0,
           is_active: true
         })
 
-      if (employeeError) {
-        console.error('Error creating employee record:', employeeError)
-        // Удаляем созданного пользователя если не удалось создать employee
+      if (salaryError) {
+        console.error('Error creating salary calculation record:', salaryError)
+        // Удаляем созданного пользователя если не удалось создать salary record
         await supabase.from('users').delete().eq('id', newUser.id)
         return NextResponse.json(
-          { error: 'Ошибка при создании записи сотрудника' },
+          { error: 'Ошибка при создании записи расчета зарплаты' },
           { status: 500 }
         )
       }
@@ -169,10 +171,11 @@ export async function GET(request: NextRequest) {
         created_at,
         last_login,
         created_by,
-        employees (
+        salary_calculations (
           id,
-          percentage_rate,
-          total_profit,
+          base_salary,
+          bonus_percentage,
+          total_earned,
           is_active
         )
       `)
