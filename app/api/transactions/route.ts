@@ -88,8 +88,10 @@ export async function GET(request: NextRequest) {
           name
         ),
         employees (
-          username,
-          full_name
+          users (
+            username,
+            full_name
+          )
         )
       `)
       .order('created_at', { ascending: false })
