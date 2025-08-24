@@ -22,8 +22,17 @@ export async function POST(request: NextRequest) {
     
     // Проверяем права HR
     console.log('Checking HR permissions...')
-    const currentUser = await requireHR()
-    console.log('Current user:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
+    let currentUser
+    try {
+      currentUser = await requireHR()
+      console.log('Current user:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
+    } catch (authError) {
+      console.error('HR permission check failed:', authError)
+      return NextResponse.json(
+        { error: 'Недостаточно прав для создания пользователя', details: authError.message },
+        { status: 403 }
+      )
+    }
     
     const clientIP = getClientIP(request)
     console.log('Client IP:', clientIP)

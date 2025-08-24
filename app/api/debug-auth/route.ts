@@ -7,7 +7,11 @@ export async function GET(request: NextRequest) {
     
     // Получаем все cookies
     const cookies = request.cookies
-    console.log('DEBUG: All cookies:', Array.from(cookies.entries()))
+    const cookieEntries = []
+    for (const [name, value] of cookies.entries()) {
+      cookieEntries.push([name, value.value])
+    }
+    console.log('DEBUG: All cookies:', cookieEntries)
     
     // Получаем токен из cookies
     const authToken = request.cookies.get('auth-token')?.value
@@ -17,7 +21,7 @@ export async function GET(request: NextRequest) {
     if (!authToken) {
       return NextResponse.json({ 
         error: 'No auth token',
-        cookies: Array.from(cookies.entries())
+        cookies: cookieEntries
       }, { status: 401 })
     }
 
@@ -30,7 +34,7 @@ export async function GET(request: NextRequest) {
       hasToken: !!authToken,
       tokenLength: authToken.length,
       hasSecret,
-      cookies: Array.from(cookies.entries())
+      cookies: cookieEntries
     })
   } catch (error) {
     console.error('DEBUG: Error in debug-auth:', error)
