@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
           name
         ),
         employees (
+          user_id,
           users (
             username,
             full_name

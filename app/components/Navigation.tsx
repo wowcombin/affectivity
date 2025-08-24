@@ -49,12 +49,13 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'CFO': [
-      { name: 'Расходы', href: '/expenses', icon: '💸' },
+      { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Банки', href: '/banks', icon: '🏦' },
       { name: 'Карты', href: '/cards', icon: '💳' },
-      { name: 'Переводы CEO', href: '/cfo-transfers', icon: '💰' },
-      { name: 'Зарплаты', href: '/salaries', icon: '💵' },
-      { name: 'Инвентаризация', href: '/inventory', icon: '📦' },
+      { name: 'Казино', href: '/casinos', icon: '🎰' },
+      { name: 'Сотрудники', href: '/employees', icon: '👥' },
+      { name: 'Транзакции', href: '/transactions', icon: '💰' },
+      { name: 'Отчеты', href: '/reports', icon: '📈' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Tester': [
@@ -72,16 +73,14 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ],
     'Admin': [
-      { name: 'Сотрудники', href: '/employees', icon: '👥' },
-      { name: 'Рабочие файлы', href: '/work-files', icon: '📋' },
-      { name: 'Тестовые сайты', href: '/test-sites', icon: '🧪' },
+      { name: 'Дашборд', href: '/dashboard', icon: '📊' },
       { name: 'Банки', href: '/banks', icon: '🏦' },
       { name: 'Карты', href: '/cards', icon: '💳' },
-      { name: 'Задачи', href: '/tasks', icon: '✅' },
-      { name: 'Переводы CFO', href: '/cfo-transfers', icon: '💰' },
-      { name: 'Зарплаты', href: '/salaries', icon: '💵' },
-      { name: 'Статистика', href: '/statistics', icon: '📊' },
-      { name: 'Система', href: '/system', icon: '⚙️' },
+      { name: 'Казино', href: '/casinos', icon: '🎰' },
+      { name: 'Сотрудники', href: '/employees', icon: '👥' },
+      { name: 'Транзакции', href: '/transactions', icon: '💰' },
+      { name: 'Отчеты', href: '/reports', icon: '📈' },
+      { name: 'Пользователи', href: '/users', icon: '👤' },
       { name: 'Профиль', href: '/profile', icon: '👤' }
     ]
   }
