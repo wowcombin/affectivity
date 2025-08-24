@@ -24,8 +24,18 @@ export async function POST(request: NextRequest) {
     console.log('Checking HR permissions...')
     let currentUser
     try {
-      currentUser = await requireHR()
-      console.log('Current user:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
+      // Используем requireAuth для API вместо requireHR
+      currentUser = await requireAuth(request)
+      console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
+      
+      // Проверяем роль вручную
+      if (!['Admin', 'HR', 'admin', 'hr'].includes(currentUser.role)) {
+        console.log('User role not allowed for HR operations:', currentUser.role)
+        return NextResponse.json(
+          { error: 'Недостаточно прав для создания пользователя. Требуется роль Admin или HR.' },
+          { status: 403 }
+        )
+      }
     } catch (authError) {
       console.error('HR permission check failed:', authError)
       return NextResponse.json(

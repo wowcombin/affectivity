@@ -113,8 +113,9 @@ export async function requireRole(allowedRoles: UserRole[]) {
     const user = await requireAuthPage()
     console.log('User authenticated:', { id: user.id, username: user.username, role: user.role })
     
+    console.log('Checking user role:', user.role, 'against allowed roles:', allowedRoles)
     if (!allowedRoles.includes(user.role as UserRole)) {
-      console.log('User role not allowed:', user.role)
+      console.log('User role not allowed:', user.role, 'Allowed roles:', allowedRoles)
       redirect('/unauthorized')
     }
     
@@ -138,7 +139,7 @@ export async function requireManager() {
 export async function requireHR() {
   console.log('=== REQUIRE HR CALLED ===')
   try {
-    const user = await requireRole(['Admin', 'HR'])
+    const user = await requireRole(['Admin', 'HR', 'admin', 'hr'])
     console.log('HR role check passed:', user.username)
     return user
   } catch (error) {

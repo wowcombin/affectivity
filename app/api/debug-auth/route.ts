@@ -8,8 +8,13 @@ export async function GET(request: NextRequest) {
     // Получаем все cookies
     const cookies = request.cookies
     const cookieEntries = []
-    for (const [name, value] of cookies.entries()) {
-      cookieEntries.push([name, value.value])
+    try {
+      for (const [name, value] of cookies.entries()) {
+        cookieEntries.push([name, value.value])
+      }
+    } catch (error) {
+      console.log('DEBUG: Error iterating cookies:', error)
+      cookieEntries.push(['error', 'Could not iterate cookies'])
     }
     console.log('DEBUG: All cookies:', cookieEntries)
     
