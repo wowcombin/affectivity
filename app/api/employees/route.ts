@@ -7,7 +7,9 @@ import { z } from 'zod'
 const employeeSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Valid email is required')
+  email: z.string().email('Valid email is required'),
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
 })
 
 export async function GET(request: NextRequest) {
@@ -121,19 +123,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = employeeSchema.parse(body)
 
-    // Генерируем username из имени и фамилии
-    const username = `${validatedData.first_name.toLowerCase()}.${validatedData.last_name.toLowerCase()}`
-    
-    // Генерируем пароль
+    // Используем переданные username и password
     const bcrypt = require('bcryptjs')
-    const password = Math.random().toString(36).slice(-8)
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const hashedPassword = await bcrypt.hash(validatedData.password, 10)
 
     // Создаем пользователя
     const { data: newUser, error: userCreateError } = await supabase
       .from('users')
       .insert({
-        username,
+        username: validatedData.username,
         email: validatedData.email,
         password_hash: hashedPassword,
         role: 'Employee',
@@ -196,8 +194,7 @@ export async function POST(request: NextRequest) {
       {
         employee_id: newEmployee.id,
         employee_name: `${validatedData.first_name} ${validatedData.last_name}`,
-        username: username,
-        password: password // Временно сохраняем пароль для логирования
+        username: validatedData.username
       },
       clientIP || undefined,
       request.headers.get('user-agent') || undefined
@@ -206,10 +203,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true,
       employee: newEmployee,
-      credentials: {
-        username,
-        password
-      },
       message: 'Employee created successfully' 
     })
   } catch (error) {

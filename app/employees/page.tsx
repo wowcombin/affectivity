@@ -47,7 +47,9 @@ export default function EmployeesPage() {
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
-    email: ''
+    email: '',
+    username: '',
+    password: ''
   })
   const router = useRouter()
 
@@ -106,7 +108,9 @@ export default function EmployeesPage() {
         setFormData({
           first_name: '',
           last_name: '',
-          email: ''
+          email: '',
+          username: '',
+          password: ''
         })
         loadEmployees()
       } else {
@@ -142,7 +146,9 @@ export default function EmployeesPage() {
         setFormData({
           first_name: '',
           last_name: '',
-          email: ''
+          email: '',
+          username: '',
+          password: ''
         })
         loadEmployees()
       } else {
@@ -214,7 +220,9 @@ export default function EmployeesPage() {
     setFormData({
       first_name: employee.first_name,
       last_name: employee.last_name,
-      email: employee.email
+      email: employee.email,
+      username: '',
+      password: ''
     })
     setShowEditForm(true)
   }
@@ -502,6 +510,34 @@ export default function EmployeesPage() {
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👤 Username
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.username}
+                      onChange={(e) => setFormData({...formData, username: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="username"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔑 Пароль
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Введите пароль"
                     />
                   </div>
                 </div>
