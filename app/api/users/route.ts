@@ -24,8 +24,50 @@ export async function POST(request: NextRequest) {
     console.log('Checking HR permissions...')
     let currentUser
     try {
-      // Используем requireAuth для API вместо requireHR
-      currentUser = await requireAuth(request)
+      // Простая проверка аутентификации прямо здесь
+      let authToken = request.cookies.get('auth-token')?.value
+      
+      if (!authToken) {
+        const authHeader = request.headers.get('authorization')
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          authToken = authHeader.substring(7)
+        }
+      }
+
+      if (!authToken) {
+        return NextResponse.json(
+          { error: 'No auth token' },
+          { status: 401 }
+        )
+      }
+
+      // Верифицируем токен
+      const jwt = require('jsonwebtoken')
+      const decoded = jwt.verify(authToken, process.env.SUPABASE_JWT_SECRET)
+      
+      if (!decoded) {
+        return NextResponse.json(
+          { error: 'Invalid token' },
+          { status: 401 }
+        )
+      }
+
+      // Получаем пользователя из базы
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', decoded.userId)
+        .eq('is_active', true)
+        .single()
+
+      if (error || !user) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        )
+      }
+
+      currentUser = user
       console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
       
       // Проверяем роль вручную
