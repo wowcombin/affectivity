@@ -92,12 +92,27 @@ export default function BanksPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/me')
-        if (response.ok) {
-          const userData = await response.json()
-          setUser(userData.user)
+        const token = localStorage.getItem('auth-token')
+        const userData = localStorage.getItem('user')
+        
+        if (!token || !userData) {
+          router.push('/login')
+          return
+        }
+        
+        try {
+          const user = JSON.parse(userData)
+          setUser(user)
           loadData()
-        } else {
+        } catch (error) {
+          console.error('Error parsing user data:', error)
+          router.push('/login')
+        }
+      } catch (error) {
+        console.error('Auth check error:', error)
+        router.push('/login')
+      }
+    }
           router.push('/login')
         }
       } catch (error) {
@@ -111,21 +126,23 @@ export default function BanksPage() {
 
   const loadData = async () => {
     try {
-      // Сначала тестируем аутентификацию
-      const authTestRes = await fetch('/api/test-auth')
-      console.log('Auth test response:', authTestRes.status)
+      const token = localStorage.getItem('auth-token')
       
-      if (!authTestRes.ok) {
-        const authError = await authTestRes.json()
-        console.error('Auth error:', authError)
-        toast.error('Ошибка аутентификации: ' + authError.error)
+      if (!token) {
+        toast.error('Токен аутентификации не найден')
+        router.push('/login')
         return
       }
 
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+
       const [banksRes, accountsRes, cardsRes] = await Promise.all([
-        fetch('/api/banks'),
-        fetch('/api/bank-accounts'),
-        fetch('/api/cards')
+        fetch('/api/banks', { headers }),
+        fetch('/api/bank-accounts', { headers }),
+        fetch('/api/cards', { headers })
       ])
 
       console.log('Banks response:', banksRes.status)
@@ -171,9 +188,13 @@ export default function BanksPage() {
     e.preventDefault()
     
     try {
+      const token = localStorage.getItem('auth-token')
       const response = await fetch('/api/banks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(bankForm),
       })
 
