@@ -77,6 +77,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Проверяем существование таблицы banks
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('banks')
+      .select('id')
+      .limit(1)
+    
+    if (tableError) {
+      console.error('Banks table does not exist:', tableError)
+      return NextResponse.json({ 
+        banks: [],
+        message: 'Таблица банков не существует или недоступна'
+      })
+    }
+
     const { data: banks, error } = await supabase
       .from('banks')
       .select('*')
@@ -84,10 +98,14 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching banks:', error)
-      return NextResponse.json({ error: 'Failed to fetch banks' }, { status: 500 })
+      return NextResponse.json({ 
+        banks: [],
+        error: 'Failed to fetch banks',
+        details: error.message
+      })
     }
 
-    return NextResponse.json({ banks })
+    return NextResponse.json({ banks: banks || [] })
   } catch (error) {
     console.error('Error in GET /api/banks:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

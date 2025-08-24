@@ -76,6 +76,20 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Проверяем существование таблицы transactions
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('transactions')
+      .select('id')
+      .limit(1)
+    
+    if (tableError) {
+      console.error('Transactions table does not exist:', tableError)
+      return NextResponse.json({ 
+        transactions: [],
+        message: 'Таблица транзакций не существует или недоступна'
+      })
+    }
+
     const { data: transactions, error } = await supabase
       .from('transactions')
       .select(`
@@ -99,7 +113,11 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching transactions:', error)
-      return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 })
+      return NextResponse.json({ 
+        transactions: [],
+        error: 'Failed to fetch transactions',
+        details: error.message
+      })
     }
 
     return NextResponse.json({ transactions: transactions || [] })
@@ -197,6 +215,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid transaction type' }, { status: 400 })
     }
 
+    // Проверяем существование таблицы transactions
+    const { data: tableCheck, error: tableError } = await supabase
+      .from('transactions')
+      .select('id')
+      .limit(1)
+    
+    if (tableError) {
+      console.error('Transactions table does not exist:', tableError)
+      return NextResponse.json({ 
+        error: 'Таблица транзакций не существует или недоступна',
+        details: tableError.message
+      }, { status: 500 })
+    }
+
     const transactionData = {
       employee_id,
       card_id,
@@ -217,7 +249,10 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating transaction:', error)
-      return NextResponse.json({ error: 'Failed to create transaction' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to create transaction',
+        details: error.message
+      }, { status: 500 })
     }
 
     return NextResponse.json({ transaction: data })
