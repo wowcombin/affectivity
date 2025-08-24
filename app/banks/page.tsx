@@ -113,13 +113,6 @@ export default function BanksPage() {
         router.push('/login')
       }
     }
-          router.push('/login')
-        }
-      } catch (error) {
-        console.error('Auth error:', error)
-        router.push('/login')
-      }
-    }
 
     checkAuth()
   }, [router])
