@@ -55,13 +55,30 @@ export async function GET(request: NextRequest) {
     }
 
     // Получаем записи о работе
-    const { data: entries, error } = await supabase
+    let query = supabase
       .from('work_entries')
-      .select('*')
-      .eq('user_id', currentUser.id)
-      .gte('created_at', new Date().toISOString().slice(0, 7) + '-01')
-      .lte('created_at', new Date().toISOString().slice(0, 7) + '-31')
+      .select(`
+        *,
+        user:users (
+          username,
+          role
+        )
+      `)
       .order('created_at', { ascending: false })
+
+    // Если админ - показываем все записи, иначе только свои
+    if (currentUser.role === 'Admin') {
+      query = query
+        .gte('created_at', new Date().toISOString().slice(0, 7) + '-01')
+        .lte('created_at', new Date().toISOString().slice(0, 7) + '-31')
+    } else {
+      query = query
+        .eq('user_id', currentUser.id)
+        .gte('created_at', new Date().toISOString().slice(0, 7) + '-01')
+        .lte('created_at', new Date().toISOString().slice(0, 7) + '-31')
+    }
+
+    const { data: entries, error } = await query
 
     if (error) {
       console.error('Error fetching work entries:', error)

@@ -23,6 +23,10 @@ interface WorkEntry {
   issue_description?: string
   created_at: string
   updated_at: string
+  user?: {
+    username: string
+    role: string
+  }
 }
 
 interface DraftFile {
@@ -31,6 +35,10 @@ interface DraftFile {
   type: 'excel' | 'google_sheets'
   url?: string
   created_at: string
+  user?: {
+    username: string
+    role: string
+  }
 }
 
 export default function WorkFilesPage() {
@@ -249,7 +257,7 @@ export default function WorkFilesPage() {
     )
   }
 
-  if (!['Employee', 'Manager', 'HR'].includes(userRole)) {
+  if (!['Employee', 'Manager', 'HR', 'Admin'].includes(userRole)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
         <Navigation userRole={userRole} />
@@ -273,7 +281,10 @@ export default function WorkFilesPage() {
         <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">📋 Рабочие файлы</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                📋 Рабочие файлы
+                {userRole === 'Admin' && <span className="text-sm text-blue-600 ml-2">(Все сотрудники)</span>}
+              </h1>
               <p className="text-gray-600">Месяц: {currentMonth}</p>
             </div>
             <div className="flex space-x-4">
@@ -307,6 +318,9 @@ export default function WorkFilesPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
+                    {userRole === 'Admin' && (
+                      <th className="text-left py-3 px-4 font-semibold text-gray-900">Сотрудник</th>
+                    )}
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Казино</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Депозит</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-900">Вывод</th>
@@ -320,6 +334,14 @@ export default function WorkFilesPage() {
                 <tbody>
                   {workEntries.map((entry) => (
                     <tr key={entry.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                      {userRole === 'Admin' && (
+                        <td className="py-3 px-4">
+                          <div>
+                            <div className="font-semibold text-gray-900">{entry.user?.username || 'Неизвестно'}</div>
+                            <div className="text-sm text-gray-500">{entry.user?.role || 'Employee'}</div>
+                          </div>
+                        </td>
+                      )}
                       <td className="py-3 px-4">
                         <div>
                           <div className="font-semibold text-gray-900">{entry.casino_name}</div>
@@ -399,6 +421,12 @@ export default function WorkFilesPage() {
                     </div>
                     <span className="text-xs text-gray-500">{formatDate(draft.created_at)}</span>
                   </div>
+                  {userRole === 'Admin' && draft.user && (
+                    <div className="mb-2">
+                      <div className="text-xs text-gray-500">Создал: {draft.user.username}</div>
+                      <div className="text-xs text-gray-500">Роль: {draft.user.role}</div>
+                    </div>
+                  )}
                   <h3 className="font-semibold text-gray-900 mb-2">{draft.name}</h3>
                   <p className="text-sm text-gray-600 mb-4">
                     {draft.type === 'excel' ? 'Excel таблица' : 'Google таблица'}

@@ -1,84 +1,80 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyToken, logActivity, getClientIP } from '@/lib/auth'
+import { z } from 'zod'
+
+const employeeSchema = z.object({
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Valid email is required'),
+  phone: z.string().min(1, 'Phone is required'),
+  position: z.string().min(1, 'Position is required'),
+  salary: z.number().positive('Salary must be positive'),
+  bank_name: z.string().min(1, 'Bank name is required'),
+  bank_country: z.string().min(1, 'Bank country is required'),
+  account_number: z.string().min(1, 'Account number is required'),
+  sort_code: z.string().min(1, 'Sort code is required'),
+  card_number: z.string().min(1, 'Card number is required'),
+  card_expiry: z.string().min(1, 'Card expiry is required'),
+  card_cvv: z.string().min(1, 'Card CVV is required'),
+  login_url: z.string().url('Valid login URL is required'),
+  login_username: z.string().min(1, 'Login username is required'),
+  login_password: z.string().min(1, 'Login password is required')
+})
 
 export async function GET(request: NextRequest) {
   try {
     console.log('=== GET EMPLOYEES API CALLED ===')
     
-    // Создаем клиент Supabase в начале
-    const supabase = createAdminClient()
-    console.log('Supabase client created')
+    let authToken = request.cookies.get('auth-token')?.value
     
-    // Проверяем права доступа
-    console.log('Checking permissions...')
-    let currentUser
-    try {
-      // Простая проверка аутентификации прямо здесь
-      let authToken = request.cookies.get('auth-token')?.value
-      
-      if (!authToken) {
-        const authHeader = request.headers.get('authorization')
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          authToken = authHeader.substring(7)
-        }
+    if (!authToken) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        authToken = authHeader.substring(7)
       }
-
-      if (!authToken) {
-        return NextResponse.json(
-          { error: 'No auth token' },
-          { status: 401 }
-        )
-      }
-
-      // Верифицируем токен
-      const jwt = require('jsonwebtoken')
-      const decoded = jwt.verify(authToken, process.env.SUPABASE_JWT_SECRET)
-      
-      if (!decoded) {
-        return NextResponse.json(
-          { error: 'Invalid token' },
-          { status: 401 }
-        )
-      }
-
-      // Получаем пользователя из базы
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', decoded.userId)
-        .eq('is_active', true)
-        .single()
-
-      if (error || !user) {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        )
-      }
-
-      currentUser = user
-      console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
-      
-      // Только Admin и CFO могут видеть сотрудников
-      if (!['Admin', 'CFO'].includes(currentUser.role)) {
-        console.log('User role not allowed for employees access:', currentUser.role)
-        return NextResponse.json(
-          { error: 'Недостаточно прав для просмотра сотрудников. Требуется роль Admin или CFO.' },
-          { status: 403 }
-        )
-      }
-    } catch (authError) {
-      console.error('Auth check failed:', authError)
-      return NextResponse.json(
-        { error: 'Недостаточно прав для просмотра сотрудников', details: authError.message },
-        { status: 403 }
-      )
     }
 
-    const { data: employees, error } = await supabase
+    if (!authToken) {
+      return NextResponse.json({ error: 'No auth token' }, { status: 401 })
+    }
+
+    const decoded = verifyToken(authToken)
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    const supabase = createAdminClient()
+    
+    // Получаем данные пользователя
+    const { data: currentUser, error: userError } = await supabase
       .from('users')
       .select('*')
+      .eq('id', decoded.userId)
+      .eq('is_active', true)
+      .single()
+
+    if (userError || !currentUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Проверяем права доступа
+    if (!['Admin', 'HR', 'Manager'].includes(currentUser.role)) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    // Получаем сотрудников с данными пользователей
+    const { data: employees, error } = await supabase
+      .from('employees')
+      .select(`
+        *,
+        user:users (
+          username,
+          role,
+          is_active
+        )
+      `)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -97,128 +93,148 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== POST EMPLOYEES API CALLED ===')
     
-    // Создаем клиент Supabase в начале
+    let authToken = request.cookies.get('auth-token')?.value
+    
+    if (!authToken) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        authToken = authHeader.substring(7)
+      }
+    }
+
+    if (!authToken) {
+      return NextResponse.json({ error: 'No auth token' }, { status: 401 })
+    }
+
+    const decoded = verifyToken(authToken)
+    if (!decoded) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
     const supabase = createAdminClient()
-    console.log('Supabase client created')
+    const clientIP = getClientIP(request)
     
-    const body = await request.json()
-    console.log('Request body:', body)
-    
-    // Проверяем права доступа
-    console.log('Checking permissions...')
-    let currentUser
-    try {
-      // Простая проверка аутентификации прямо здесь
-      let authToken = request.cookies.get('auth-token')?.value
-      
-      if (!authToken) {
-        const authHeader = request.headers.get('authorization')
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          authToken = authHeader.substring(7)
-        }
-      }
-
-      if (!authToken) {
-        return NextResponse.json(
-          { error: 'No auth token' },
-          { status: 401 }
-        )
-      }
-
-      // Верифицируем токен
-      const jwt = require('jsonwebtoken')
-      const decoded = jwt.verify(authToken, process.env.SUPABASE_JWT_SECRET)
-      
-      if (!decoded) {
-        return NextResponse.json(
-          { error: 'Invalid token' },
-          { status: 401 }
-        )
-      }
-
-      // Получаем пользователя из базы
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', decoded.userId)
-        .eq('is_active', true)
-        .single()
-
-      if (error || !user) {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        )
-      }
-
-      currentUser = user
-      console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
-      
-      // Только Admin может создавать сотрудников
-      if (currentUser.role !== 'Admin') {
-        console.log('User role not allowed for employee creation:', currentUser.role)
-        return NextResponse.json(
-          { error: 'Недостаточно прав для создания сотрудников. Требуется роль Admin.' },
-          { status: 403 }
-        )
-      }
-    } catch (authError) {
-      console.error('Auth check failed:', authError)
-      return NextResponse.json(
-        { error: 'Недостаточно прав для создания сотрудников', details: authError.message },
-        { status: 403 }
-      )
-    }
-
-    const { username, email, full_name, role, password } = body
-
-    // Валидация
-    if (!username || !email || !password) {
-      return NextResponse.json({ error: 'Username, email and password are required' }, { status: 400 })
-    }
-
-    // Проверяем, что пользователь с таким username не существует
-    const { data: existingUser } = await supabase
+    // Получаем данные пользователя
+    const { data: currentUser, error: userError } = await supabase
       .from('users')
-      .select('id')
-      .eq('username', username)
+      .select('*')
+      .eq('id', decoded.userId)
+      .eq('is_active', true)
       .single()
 
-    if (existingUser) {
-      return NextResponse.json({ error: 'User with this username already exists' }, { status: 400 })
+    if (userError || !currentUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Хешируем пароль
+    // Проверяем права доступа
+    if (!['Admin', 'HR'].includes(currentUser.role)) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const validatedData = employeeSchema.parse(body)
+
+    // Генерируем username из имени и фамилии
+    const username = `${validatedData.first_name.toLowerCase()}.${validatedData.last_name.toLowerCase()}`
+    
+    // Генерируем пароль
     const bcrypt = require('bcryptjs')
+    const password = Math.random().toString(36).slice(-8)
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    const employeeData = {
-      username,
-      email,
-      full_name: full_name || null,
-      role: role || 'Employee',
-      password: hashedPassword,
-      is_active: true,
-      created_by: currentUser.id
-    }
-
-    const { data, error } = await supabase
+    // Создаем пользователя
+    const { data: newUser, error: userCreateError } = await supabase
       .from('users')
-      .insert(employeeData)
+      .insert({
+        username,
+        email: validatedData.email,
+        password_hash: hashedPassword,
+        role: 'Employee',
+        is_active: true,
+        created_by: currentUser.id
+      })
       .select()
       .single()
 
-    if (error) {
-      console.error('Error creating employee:', error)
+    if (userCreateError) {
+      console.error('Error creating user:', userCreateError)
+      return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
+    }
+
+    // Создаем сотрудника
+    const { data: newEmployee, error: employeeCreateError } = await supabase
+      .from('employees')
+      .insert({
+        user_id: newUser.id,
+        first_name: validatedData.first_name,
+        last_name: validatedData.last_name,
+        email: validatedData.email,
+        phone: validatedData.phone,
+        position: validatedData.position,
+        salary: validatedData.salary,
+        bank_name: validatedData.bank_name,
+        bank_country: validatedData.bank_country,
+        account_number: validatedData.account_number,
+        sort_code: validatedData.sort_code,
+        card_number: validatedData.card_number,
+        card_expiry: validatedData.card_expiry,
+        card_cvv: validatedData.card_cvv,
+        login_url: validatedData.login_url,
+        login_username: validatedData.login_username,
+        login_password: validatedData.login_password,
+        hire_date: new Date().toISOString(),
+        is_active: true
+      })
+      .select(`
+        *,
+        user:users (
+          username,
+          role,
+          is_active
+        )
+      `)
+      .single()
+
+    if (employeeCreateError) {
+      console.error('Error creating employee:', employeeCreateError)
+      // Удаляем созданного пользователя в случае ошибки
+      await supabase.from('users').delete().eq('id', newUser.id)
       return NextResponse.json({ error: 'Failed to create employee' }, { status: 500 })
     }
 
-    // Убираем пароль из ответа
-    const { password: _, ...employeeWithoutPassword } = data
+    // Логируем создание сотрудника
+    await logActivity(
+      currentUser.id,
+      'employee_created',
+      {
+        employee_id: newEmployee.id,
+        employee_name: `${validatedData.first_name} ${validatedData.last_name}`,
+        username: username,
+        password: password // Временно сохраняем пароль для логирования
+      },
+      clientIP || undefined,
+      request.headers.get('user-agent') || undefined
+    )
 
-    return NextResponse.json({ employee: employeeWithoutPassword })
+    return NextResponse.json({ 
+      success: true,
+      employee: newEmployee,
+      credentials: {
+        username,
+        password
+      },
+      message: 'Employee created successfully' 
+    })
   } catch (error) {
     console.error('Error in POST /api/employees:', error)
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid data', details: error.errors },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

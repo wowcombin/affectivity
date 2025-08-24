@@ -45,12 +45,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Получаем черновики пользователя
-    const { data: drafts, error } = await supabase
+    // Получаем черновики
+    let query = supabase
       .from('draft_files')
-      .select('*')
-      .eq('user_id', currentUser.id)
+      .select(`
+        *,
+        user:users (
+          username,
+          role
+        )
+      `)
       .order('created_at', { ascending: false })
+
+    // Если админ - показываем все черновики, иначе только свои
+    if (currentUser.role !== 'Admin') {
+      query = query.eq('user_id', currentUser.id)
+    }
+
+    const { data: drafts, error } = await query
 
     if (error) {
       console.error('Error fetching draft files:', error)

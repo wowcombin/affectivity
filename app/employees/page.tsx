@@ -9,57 +9,80 @@ import { toast } from 'sonner'
 
 interface Employee {
   id: string
-  username: string
+  user_id: string
+  first_name: string
+  last_name: string
   email: string
-  full_name: string | null
-  role: string
-  usdt_address: string | null
-  usdt_network: string
+  phone: string
+  position: string
+  salary: number
+  hire_date: string
   is_active: boolean
+  bank_name: string
+  bank_country: string
+  account_number: string
+  sort_code: string
+  card_number: string
+  card_expiry: string
+  card_cvv: string
+  login_url: string
+  login_username: string
+  login_password: string
   created_at: string
-  last_login: string | null
-  created_by: string | null
+  updated_at: string
+  user: {
+    username: string
+    role: string
+    is_active: boolean
+  }
 }
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [showCreateForm, setShowCreateForm] = useState(false)
   const [userRole, setUserRole] = useState('')
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [formData, setFormData] = useState({
-    username: '',
+    first_name: '',
+    last_name: '',
     email: '',
-    full_name: '',
-    role: 'Employee',
-    password: ''
+    phone: '',
+    position: '',
+    salary: '',
+    bank_name: '',
+    bank_country: '',
+    account_number: '',
+    sort_code: '',
+    card_number: '',
+    card_expiry: '',
+    card_cvv: '',
+    login_url: '',
+    login_username: '',
+    login_password: ''
   })
   const router = useRouter()
 
   useEffect(() => {
-    // Получаем роль пользователя
     const userData = localStorage.getItem('user')
     if (userData) {
       const user = JSON.parse(userData)
       setUserRole(user.role)
+      loadEmployees()
+    } else {
+      router.push('/login')
     }
-    loadEmployees()
   }, [])
 
   const loadEmployees = async () => {
     try {
       const authToken = localStorage.getItem('auth-token')
-      if (!authToken) {
-        router.push('/login')
-        return
-      }
-
       const response = await fetch('/api/employees', {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
       })
-      
-      console.log('Employees response:', response.status)
       
       if (response.ok) {
         const data = await response.json()
@@ -76,95 +99,186 @@ export default function EmployeesPage() {
     }
   }
 
-  const handleCreateEmployee = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     try {
       const authToken = localStorage.getItem('auth-token')
-      if (!authToken) {
-        router.push('/login')
-        return
-      }
-
       const response = await fetch('/api/employees', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData)
       })
 
       if (response.ok) {
-        toast.success('Сотрудник успешно создан!')
+        toast.success('Сотрудник успешно добавлен!')
         setShowCreateForm(false)
         setFormData({
-          username: '',
+          first_name: '',
+          last_name: '',
           email: '',
-          full_name: '',
-          role: 'Employee',
-          password: ''
+          phone: '',
+          position: '',
+          salary: '',
+          bank_name: '',
+          bank_country: '',
+          account_number: '',
+          sort_code: '',
+          card_number: '',
+          card_expiry: '',
+          card_cvv: '',
+          login_url: '',
+          login_username: '',
+          login_password: ''
         })
         loadEmployees()
       } else {
-        const errorData = await response.json()
-        toast.error(errorData.error || 'Ошибка создания сотрудника')
+        const error = await response.json()
+        toast.error(error.error || 'Ошибка добавления сотрудника')
       }
     } catch (error) {
-      console.error('Error creating employee:', error)
-      toast.error('Ошибка создания сотрудника')
+      console.error('Submit error:', error)
+      toast.error('Ошибка добавления сотрудника')
     }
   }
 
-  const handleFireEmployee = async (employeeId: string, username: string) => {
-    if (!confirm(`Вы уверены, что хотите уволить сотрудника ${username}?`)) {
-      return
-    }
-
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!editingEmployee) return
+    
     try {
-      const token = localStorage.getItem('auth-token')
-      const response = await fetch('/api/employees/fire', {
-        method: 'POST',
+      const authToken = localStorage.getItem('auth-token')
+      const response = await fetch(`/api/employees/${editingEmployee.id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({ employee_id: employeeId }),
+        body: JSON.stringify(formData)
       })
 
       if (response.ok) {
-        toast.success(`Сотрудник ${username} уволен`)
+        toast.success('Сотрудник успешно обновлен!')
+        setShowEditForm(false)
+        setEditingEmployee(null)
+        setFormData({
+          first_name: '',
+          last_name: '',
+          email: '',
+          phone: '',
+          position: '',
+          salary: '',
+          bank_name: '',
+          bank_country: '',
+          account_number: '',
+          sort_code: '',
+          card_number: '',
+          card_expiry: '',
+          card_cvv: '',
+          login_url: '',
+          login_username: '',
+          login_password: ''
+        })
         loadEmployees()
       } else {
         const error = await response.json()
-        toast.error(error.error || 'Ошибка увольнения сотрудника')
+        toast.error(error.error || 'Ошибка обновления сотрудника')
       }
     } catch (error) {
-      console.error('Error firing employee:', error)
-      toast.error('Ошибка увольнения сотрудника')
+      console.error('Edit error:', error)
+      toast.error('Ошибка обновления сотрудника')
     }
   }
 
-  const handleLogout = async () => {
+  const handleDelete = async (employeeId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этого сотрудника? Это действие нельзя отменить.')) {
+      return
+    }
+    
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-      localStorage.removeItem('auth-token')
-      localStorage.removeItem('user')
-      
-      // Очищаем cookie
-      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      
-      router.push('/login')
-      toast.success('Вы успешно вышли из системы')
+      const authToken = localStorage.getItem('auth-token')
+      const response = await fetch(`/api/employees/${employeeId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      })
+
+      if (response.ok) {
+        toast.success('Сотрудник успешно удален!')
+        loadEmployees()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Ошибка удаления сотрудника')
+      }
     } catch (error) {
-      console.error('Logout error:', error)
-      toast.error('Ошибка при выходе из системы')
+      console.error('Delete error:', error)
+      toast.error('Ошибка удаления сотрудника')
+    }
+  }
+
+  const openEditForm = (employee: Employee) => {
+    setEditingEmployee(employee)
+    setFormData({
+      first_name: employee.first_name,
+      last_name: employee.last_name,
+      email: employee.email,
+      phone: employee.phone,
+      position: employee.position,
+      salary: employee.salary.toString(),
+      bank_name: employee.bank_name,
+      bank_country: employee.bank_country,
+      account_number: employee.account_number,
+      sort_code: employee.sort_code,
+      card_number: employee.card_number,
+      card_expiry: employee.card_expiry,
+      card_cvv: employee.card_cvv,
+      login_url: employee.login_url,
+      login_username: employee.login_username,
+      login_password: employee.login_password
+    })
+    setShowEditForm(true)
+  }
+
+  const getStatusColor = (isActive: boolean) => {
+    return isActive ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'
+  }
+
+  const getStatusIcon = (isActive: boolean) => {
+    return isActive ? '✅' : '❌'
+  }
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'Admin': return 'from-red-500 to-red-600'
+      case 'CFO': return 'from-purple-500 to-purple-600'
+      case 'Manager': return 'from-blue-500 to-blue-600'
+      case 'HR': return 'from-pink-500 to-pink-600'
+      case 'Tester': return 'from-yellow-500 to-yellow-600'
+      case 'Employee': return 'from-green-500 to-green-600'
+      default: return 'from-gray-500 to-gray-600'
+    }
+  }
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'Admin': return '👑'
+      case 'CFO': return '💰'
+      case 'Manager': return '👔'
+      case 'HR': return '👥'
+      case 'Tester': return '🧪'
+      case 'Employee': return '👷'
+      default: return '❓'
     }
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
           <p className="text-white text-lg">Загрузка сотрудников...</p>
@@ -173,268 +287,713 @@ export default function EmployeesPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
-      {/* Navigation */}
-      <Navigation userRole={userRole} onLogout={handleLogout} />
+  if (!['Admin', 'HR', 'Manager'].includes(userRole)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+        <Navigation userRole={userRole} />
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-8 text-center">
+            <div className="text-6xl mb-4">🚫</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Доступ запрещен</h3>
+            <p className="text-gray-600">Только администраторы, HR и менеджеры могут просматривать сотрудников</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+      <Navigation userRole={userRole} />
+      
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">👥 Сотрудники</h1>
+              <p className="text-gray-600">Управление персоналом компании</p>
+            </div>
+            <Button
+              onClick={() => setShowCreateForm(true)}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              ➕ Добавить сотрудника
+            </Button>
+          </div>
+        </div>
+
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center">
-              <div className="h-12 w-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                <span className="text-2xl">👥</span>
-              </div>
+              <div className="text-3xl mr-4">👥</div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Всего сотрудников</h3>
-                <p className="text-3xl font-bold text-blue-600">{employees.length}</p>
+                <p className="text-sm text-gray-600">Всего сотрудников</p>
+                <p className="text-2xl font-bold text-gray-900">{employees.length}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center">
-              <div className="h-12 w-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                <span className="text-2xl">✅</span>
-              </div>
+              <div className="text-3xl mr-4">✅</div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Активных</h3>
-                <p className="text-3xl font-bold text-green-600">
-                  {employees.filter(e => e.is_active).length}
+                <p className="text-sm text-gray-600">Активных</p>
+                <p className="text-2xl font-bold text-gray-900">{employees.filter(e => e.is_active).length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
+            <div className="flex items-center">
+              <div className="text-3xl mr-4">💰</div>
+              <div>
+                <p className="text-sm text-gray-600">Общий фонд ЗП</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(employees.reduce((sum, e) => sum + e.salary, 0))}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
             <div className="flex items-center">
-              <div className="h-12 w-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                <span className="text-2xl">🚫</span>
-              </div>
+              <div className="text-3xl mr-4">📅</div>
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Уволенных</h3>
-                <p className="text-3xl font-bold text-red-600">
-                  {employees.filter(e => !e.is_active).length}
+                <p className="text-sm text-gray-600">Новых в этом месяце</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {employees.filter(e => {
+                    const hireDate = new Date(e.hire_date)
+                    const now = new Date()
+                    return hireDate.getMonth() === now.getMonth() && hireDate.getFullYear() === now.getFullYear()
+                  }).length}
                 </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-            <div className="flex items-center">
-              <div className="h-12 w-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg mr-4">
-                <span className="text-2xl">🆕</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">Новых за месяц</h3>
-                <p className="text-3xl font-bold text-purple-600">3</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Employees List */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-          <div className="px-6 py-4 border-b border-white/20 bg-gradient-to-r from-blue-50 to-purple-50">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-900">👥 Список сотрудников</h2>
-              <Button
-                onClick={() => setShowCreateForm(true)}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              >
-                ✨ + Добавить сотрудника
-              </Button>
+        <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Список сотрудников</h2>
+          
+          {employees.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">👥</div>
+              <p className="text-gray-600">Нет добавленных сотрудников</p>
             </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/20">
-              <thead className="bg-white/50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    👤 Сотрудник
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    🏷️ Роль
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    📅 Дата найма
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    📊 Статус
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    💰 USDT адрес
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    ⚡ Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white/30 divide-y divide-white/20">
-                {employees.map((employee) => (
-                  <tr key={employee.id} className="hover:bg-white/50 transition-colors duration-200">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
-                          <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-                            <span className="text-lg font-bold text-white">
-                              {employee.full_name?.charAt(0) || employee.username.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-bold text-gray-900">
-                            {employee.full_name || 'Не указано'}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            @{employee.username} • {employee.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border border-blue-200">
-                        {employee.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(employee.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                        employee.is_active 
-                          ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200' 
-                          : 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200'
-                      }`}>
-                        {employee.is_active ? '✅ Активен' : '🚫 Уволен'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {employee.usdt_address ? (
-                        <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded-lg">
-                          {employee.usdt_address.slice(0, 10)}...{employee.usdt_address.slice(-8)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 italic">Не указан</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {employee.is_active && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleFireEmployee(employee.id, employee.username)}
-                          className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-3 py-1 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                        >
-                          🚫 Уволить
-                        </Button>
-                      )}
-                    </td>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Сотрудник</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Роль</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Банк</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Карта</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Зарплата</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Статус</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-900">Действия</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {employees.map((employee) => (
+                    <tr key={employee.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                      <td className="py-3 px-4">
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {employee.first_name} {employee.last_name}
+                          </div>
+                          <div className="text-sm text-gray-500">{employee.email}</div>
+                          <div className="text-xs text-gray-400">{employee.position}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r ${getRoleColor(employee.user.role)} text-white`}>
+                          {getRoleIcon(employee.user.role)} {employee.user.role}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div>
+                          <div className="font-semibold text-gray-900">{employee.bank_name}</div>
+                          <div className="text-sm text-gray-500">{employee.bank_country}</div>
+                          <div className="text-xs text-gray-400">{employee.account_number}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-mono text-sm">
+                          <div className="text-gray-900">{employee.card_number}</div>
+                          <div className="text-gray-500">{employee.card_expiry} | {employee.card_cvv}</div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-green-600 font-semibold">
+                          {formatCurrency(employee.salary)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r ${getStatusColor(employee.is_active)} text-white`}>
+                          {getStatusIcon(employee.is_active)} {employee.is_active ? 'Активен' : 'Неактивен'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => openEditForm(employee)}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
+                          >
+                            ✏️ Редактировать
+                          </button>
+                          {userRole === 'Admin' && (
+                            <button
+                              onClick={() => handleDelete(employee.id)}
+                              className="text-red-600 hover:text-red-800 text-sm font-semibold"
+                            >
+                              🗑️ Удалить
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Create Employee Modal */}
       {showCreateForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-8 border w-full max-w-md shadow-2xl rounded-3xl bg-white/95 backdrop-blur-md">
-            <div className="mt-3">
-              <div className="text-center mb-6">
-                <div className="h-16 w-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <span className="text-white font-bold text-2xl">✨</span>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Добавить нового сотрудника
-                </h3>
-                <p className="text-gray-600">Заполните информацию о новом сотруднике</p>
-              </div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">➕ Добавить нового сотрудника</h2>
               
-              <form onSubmit={handleCreateEmployee} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    👤 Имя пользователя
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.username}
-                    onChange={(e) => setFormData({...formData, username: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
-                    placeholder="Введите имя пользователя"
-                  />
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👤 Имя
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.first_name}
+                      onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👤 Фамилия
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.last_name}
+                      onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📧 Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📱 Телефон
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💼 Должность
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.position}
+                      onChange={(e) => setFormData({...formData, position: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💰 Зарплата
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={formData.salary}
+                      onChange={(e) => setFormData({...formData, salary: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🏦 Название банка
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.bank_name}
+                      onChange={(e) => setFormData({...formData, bank_name: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🌍 Страна банка
+                    </label>
+                    <select
+                      value={formData.bank_country}
+                      onChange={(e) => setFormData({...formData, bank_country: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Выберите страну</option>
+                      <option value="UK">🇬🇧 UK</option>
+                      <option value="IE">🇮🇪 IE</option>
+                      <option value="DE">🇩🇪 DE</option>
+                      <option value="ES">🇪🇸 ES</option>
+                      <option value="FR">🇫🇷 FR</option>
+                      <option value="IT">🇮🇹 IT</option>
+                      <option value="NL">🇳🇱 NL</option>
+                      <option value="BE">🇧🇪 BE</option>
+                      <option value="AT">🇦🇹 AT</option>
+                      <option value="CH">🇨🇭 CH</option>
+                      <option value="PL">🇵🇱 PL</option>
+                      <option value="CZ">🇨🇿 CZ</option>
+                      <option value="HU">🇭🇺 HU</option>
+                      <option value="RO">🇷🇴 RO</option>
+                      <option value="BG">🇧🇬 BG</option>
+                      <option value="HR">🇭🇷 HR</option>
+                      <option value="SI">🇸🇮 SI</option>
+                      <option value="SK">🇸🇰 SK</option>
+                      <option value="LT">🇱🇹 LT</option>
+                      <option value="LV">🇱🇻 LV</option>
+                      <option value="EE">🇪🇪 EE</option>
+                      <option value="FI">🇫🇮 FI</option>
+                      <option value="SE">🇸🇪 SE</option>
+                      <option value="DK">🇩🇰 DK</option>
+                      <option value="NO">🇳🇴 NO</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📝 Номер счета
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.account_number}
+                      onChange={(e) => setFormData({...formData, account_number: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔢 Sort Code
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.sort_code}
+                      onChange={(e) => setFormData({...formData, sort_code: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💳 Номер карты
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.card_number}
+                      onChange={(e) => setFormData({...formData, card_number: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="1234 5678 9012 3456"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📅 Срок действия
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.card_expiry}
+                      onChange={(e) => setFormData({...formData, card_expiry: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="MM/YY"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔐 CVV
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.card_cvv}
+                      onChange={(e) => setFormData({...formData, card_cvv: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="123"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔗 Ссылка для входа
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={formData.login_url}
+                      onChange={(e) => setFormData({...formData, login_url: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👤 Логин
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.login_username}
+                      onChange={(e) => setFormData({...formData, login_username: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔑 Пароль
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={formData.login_password}
+                      onChange={(e) => setFormData({...formData, login_password: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    📧 Email
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
-                    placeholder="Введите email"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    📝 Полное имя
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
-                    placeholder="Введите полное имя"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    🏷️ Роль
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
-                  >
-                    <option value="Employee">👤 Employee</option>
-                    <option value="Tester">🧪 Tester</option>
-                    <option value="Manager">🎯 Manager</option>
-                    <option value="HR">👥 HR</option>
-                    <option value="CFO">💼 CFO</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    🔒 Пароль
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-900 bg-white"
-                    placeholder="Введите пароль"
-                  />
-                </div>
-                <div className="flex justify-end space-x-3 pt-4">
+                
+                <div className="flex space-x-4 pt-4">
                   <Button
                     type="button"
-                    variant="outline"
                     onClick={() => setShowCreateForm(false)}
-                    className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900 bg-white"
+                    className="flex-1 px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900"
                   >
                     ❌ Отмена
                   </Button>
-                  <Button 
+                  <Button
                     type="submit"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                   >
-                    ✨ Создать
+                    ✅ Добавить
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {showEditForm && editingEmployee && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">✏️ Редактировать сотрудника</h2>
+              
+              <form onSubmit={handleEdit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👤 Имя
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.first_name}
+                      onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👤 Фамилия
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.last_name}
+                      onChange={(e) => setFormData({...formData, last_name: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📧 Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📱 Телефон
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💼 Должность
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.position}
+                      onChange={(e) => setFormData({...formData, position: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💰 Зарплата
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={formData.salary}
+                      onChange={(e) => setFormData({...formData, salary: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🏦 Название банка
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.bank_name}
+                      onChange={(e) => setFormData({...formData, bank_name: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🌍 Страна банка
+                    </label>
+                    <select
+                      value={formData.bank_country}
+                      onChange={(e) => setFormData({...formData, bank_country: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Выберите страну</option>
+                      <option value="UK">🇬🇧 UK</option>
+                      <option value="IE">🇮🇪 IE</option>
+                      <option value="DE">🇩🇪 DE</option>
+                      <option value="ES">🇪🇸 ES</option>
+                      <option value="FR">🇫🇷 FR</option>
+                      <option value="IT">🇮🇹 IT</option>
+                      <option value="NL">🇳🇱 NL</option>
+                      <option value="BE">🇧🇪 BE</option>
+                      <option value="AT">🇦🇹 AT</option>
+                      <option value="CH">🇨🇭 CH</option>
+                      <option value="PL">🇵🇱 PL</option>
+                      <option value="CZ">🇨🇿 CZ</option>
+                      <option value="HU">🇭🇺 HU</option>
+                      <option value="RO">🇷🇴 RO</option>
+                      <option value="BG">🇧🇬 BG</option>
+                      <option value="HR">🇭🇷 HR</option>
+                      <option value="SI">🇸🇮 SI</option>
+                      <option value="SK">🇸🇰 SK</option>
+                      <option value="LT">🇱🇹 LT</option>
+                      <option value="LV">🇱🇻 LV</option>
+                      <option value="EE">🇪🇪 EE</option>
+                      <option value="FI">🇫🇮 FI</option>
+                      <option value="SE">🇸🇪 SE</option>
+                      <option value="DK">🇩🇰 DK</option>
+                      <option value="NO">🇳🇴 NO</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📝 Номер счета
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.account_number}
+                      onChange={(e) => setFormData({...formData, account_number: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔢 Sort Code
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.sort_code}
+                      onChange={(e) => setFormData({...formData, sort_code: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      💳 Номер карты
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.card_number}
+                      onChange={(e) => setFormData({...formData, card_number: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="1234 5678 9012 3456"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      📅 Срок действия
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.card_expiry}
+                      onChange={(e) => setFormData({...formData, card_expiry: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="MM/YY"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔐 CVV
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.card_cvv}
+                      onChange={(e) => setFormData({...formData, card_cvv: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="123"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔗 Ссылка для входа
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={formData.login_url}
+                      onChange={(e) => setFormData({...formData, login_url: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      👤 Логин
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.login_username}
+                      onChange={(e) => setFormData({...formData, login_username: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      🔑 Пароль
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      value={formData.login_password}
+                      onChange={(e) => setFormData({...formData, login_password: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex space-x-4 pt-4">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowEditForm(false)
+                      setEditingEmployee(null)
+                    }}
+                    className="flex-1 px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900"
+                  >
+                    ❌ Отмена
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    ✅ Сохранить
                   </Button>
                 </div>
               </form>
