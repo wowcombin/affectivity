@@ -27,24 +27,25 @@ export async function POST(request: NextRequest) {
     // Проверяем права HR
     console.log('Checking HR permissions...')
     let currentUser
+    
+    // Простая проверка аутентификации прямо здесь
+    let authToken = request.cookies.get('auth-token')?.value
+    
+    if (!authToken) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        authToken = authHeader.substring(7)
+      }
+    }
+
+    if (!authToken) {
+      return NextResponse.json(
+        { error: 'No auth token' },
+        { status: 401 }
+      )
+    }
+
     try {
-      // Простая проверка аутентификации прямо здесь
-      let authToken = request.cookies.get('auth-token')?.value
-      
-      if (!authToken) {
-        const authHeader = request.headers.get('authorization')
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          authToken = authHeader.substring(7)
-        }
-      }
-
-      if (!authToken) {
-        return NextResponse.json(
-          { error: 'No auth token' },
-          { status: 401 }
-        )
-      }
-
       // Верифицируем токен
       const jwt = require('jsonwebtoken')
       const decoded = jwt.verify(authToken, process.env.SUPABASE_JWT_SECRET)
@@ -251,8 +252,77 @@ export async function POST(request: NextRequest) {
 // Получение списка пользователей (только для HR и выше)
 export async function GET(request: NextRequest) {
   try {
-    const currentUser = await requireHR()
+    console.log('=== GET USERS API CALLED ===')
+    
+    // Создаем клиент Supabase в начале
     const supabase = createAdminClient()
+    console.log('Supabase client created')
+    
+    // Проверяем права HR
+    console.log('Checking HR permissions...')
+    let currentUser
+    try {
+      // Простая проверка аутентификации прямо здесь
+      let authToken = request.cookies.get('auth-token')?.value
+      
+      if (!authToken) {
+        const authHeader = request.headers.get('authorization')
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          authToken = authHeader.substring(7)
+        }
+      }
+
+      if (!authToken) {
+        return NextResponse.json(
+          { error: 'No auth token' },
+          { status: 401 }
+        )
+      }
+
+      // Верифицируем токен
+      const jwt = require('jsonwebtoken')
+      const decoded = jwt.verify(authToken, process.env.SUPABASE_JWT_SECRET)
+      
+      if (!decoded) {
+        return NextResponse.json(
+          { error: 'Invalid token' },
+          { status: 401 }
+        )
+      }
+
+      // Получаем пользователя из базы
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', decoded.userId)
+        .eq('is_active', true)
+        .single()
+
+      if (error || !user) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        )
+      }
+
+      currentUser = user
+      console.log('Current user from API auth:', { id: currentUser.id, username: currentUser.username, role: currentUser.role })
+      
+      // Проверяем роль вручную
+      if (!['Admin', 'HR', 'admin', 'hr'].includes(currentUser.role)) {
+        console.log('User role not allowed for HR operations:', currentUser.role)
+        return NextResponse.json(
+          { error: 'Недостаточно прав для просмотра пользователей. Требуется роль Admin или HR.' },
+          { status: 403 }
+        )
+      }
+    } catch (authError) {
+      console.error('HR permission check failed:', authError)
+      return NextResponse.json(
+        { error: 'Недостаточно прав для просмотра пользователей', details: authError.message },
+        { status: 403 }
+      )
+    }
     
     const { searchParams } = new URL(request.url)
     const role = searchParams.get('role')
