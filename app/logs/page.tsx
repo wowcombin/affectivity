@@ -64,7 +64,7 @@ export default function LogsPage() {
       }
       
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) {
+        if (value && typeof value === 'string') {
           url += `&${key}=${encodeURIComponent(value)}`
         }
       })

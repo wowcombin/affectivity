@@ -1,30 +1,47 @@
-// @ts-nocheck
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { logActivity, getClientIP } from '@/lib/auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyToken, logActivity, getClientIP } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
+    console.log('=== LOGOUT API CALLED ===')
+    
+    const supabase = createAdminClient()
     const clientIP = getClientIP(request)
     
-    // Получаем текущего пользователя
-    const { data: { user } } = await supabase.auth.getUser()
+    // Получаем токен из cookies или заголовка Authorization
+    let authToken = request.cookies.get('auth-token')?.value
     
-    if (user) {
-      // Логируем выход
-      await logActivity(user.id, 'logout', {}, clientIP || undefined, request.headers.get('user-agent') || undefined)
+    if (!authToken) {
+      const authHeader = request.headers.get('authorization')
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        authToken = authHeader.substring(7)
+      }
     }
 
-    // Выходим из Supabase Auth
-    const { error } = await supabase.auth.signOut()
-    
-    if (error) {
-      console.error('Logout error:', error)
+    if (authToken) {
+      // Верифицируем токен для получения информации о пользователе
+      const decoded = verifyToken(authToken)
+      if (decoded) {
+        // Логируем выход
+        await logActivity(decoded.userId, 'logout', {}, clientIP || undefined, request.headers.get('user-agent') || undefined)
+        console.log('Logout logged for user:', decoded.userId)
+      }
     }
 
-    return NextResponse.json({ success: true })
+    const response = NextResponse.json({ success: true })
+    
+    // Удаляем cookie
+    response.cookies.set('auth-token', '', {
+      httpOnly: false,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 0,
+      path: '/'
+    })
+
+    console.log('Logout successful')
+    return response
 
   } catch (error) {
     console.error('Logout error:', error)

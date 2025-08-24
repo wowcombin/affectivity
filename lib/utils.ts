@@ -114,7 +114,7 @@ export function validateBEP20Address(address: string): boolean {
 // Валидация номера карты
 export function validateCardNumber(cardNumber: string): boolean {
   const cardRegex = /^\d{4}\s\d{4}\s\d{4}\s\d{4}$/
-  return cardRegex.test(cardNumber.replace(/\s/g, ''))
+  return cardRegex.test(cardNumber)
 }
 
 // Маскирование номера карты
