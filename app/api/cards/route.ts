@@ -80,20 +80,15 @@ export async function GET(request: NextRequest) {
     const { data: cards, error } = await supabase
       .from('cards')
       .select(`
-        id,
-        card_number,
-        card_expiry,
-        card_cvv,
-        card_type,
-        is_active,
-        assigned_to,
-        assigned_site,
-        times_assigned,
-        times_worked,
-        created_at,
-        bank_account:bank_accounts (
-          bank_name,
-          bank_country
+        *,
+        bank_accounts (
+          id,
+          account_name,
+          banks (
+            id,
+            name,
+            country
+          )
         )
       `)
       .order('created_at', { ascending: false })
