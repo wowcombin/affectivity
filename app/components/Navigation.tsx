@@ -105,97 +105,80 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden lg:flex bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      <nav className="hidden lg:flex bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 shadow-2xl border-b border-purple-500/20">
+        <div className="max-w-7xl mx-auto px-6 w-full">
+          <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <div className="flex items-center">
-              <div className="h-10 w-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg mr-3">
-                <span className="text-white font-bold text-lg">A</span>
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-2xl transform hover:rotate-12 transition-all duration-300">
+                <span className="text-white font-black text-xl">A</span>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Affectivity
-              </span>
+              <div className="flex flex-col">
+                <span className="text-2xl font-black bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  Affectivity
+                </span>
+                <span className="text-xs text-gray-400 font-medium tracking-wider">
+                  Employee Management System
+                </span>
+              </div>
             </div>
 
-            {/* Role-based Dropdowns */}
-            <div className="flex space-x-2">
-              {Object.keys(roleNavigation).map((role) => {
-                const items = roleNavigation[role as keyof typeof roleNavigation]
-                const isActive = activeDropdown === role
-                const hasActiveItem = items.some(item => pathname === item.href)
-                
+            {/* Main Navigation */}
+            <div className="flex items-center space-x-1">
+              {currentRoleItems.map((item) => {
+                const isActive = pathname === item.href
                 return (
-                  <div key={role} className="relative dropdown-container">
-                    <button
-                      onClick={() => toggleDropdown(role)}
-                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 flex items-center ${
-                        isActive || hasActiveItem
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                          : 'text-gray-700 hover:bg-white/50 hover:text-gray-900'
-                      }`}
-                    >
-                      <span className="mr-2">
-                        {role === 'HR' ? '👥' : 
-                         role === 'Manager' ? '👨‍💼' : 
-                         role === 'CFO' ? '💰' : 
-                         role === 'Tester' ? '🧪' : 
-                         role === 'Employee' ? '👤' : 
-                         role === 'Admin' ? '⚡' : '👤'}
-                      </span>
-                      {role}
-                      <svg className={`ml-2 h-4 w-4 transition-transform duration-200 ${isActive ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-
-                    {/* Dropdown Menu */}
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`relative px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${
+                      isActive
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-xl'
+                        : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="mr-2 text-lg">{item.icon}</span>
+                    {item.name}
                     {isActive && (
-                      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border-2 border-blue-200 z-[99999] min-w-max transform opacity-100 scale-100 transition-all duration-200">
-                        <div className="py-2">
-                          {items.map((item) => {
-                            const isActiveItem = pathname === item.href
-                            return (
-                              <Link
-                                key={item.name}
-                                href={item.href}
-                                onClick={() => setActiveDropdown(null)}
-                                className={`block px-4 py-3 text-sm font-medium transition-all duration-300 ${
-                                  isActiveItem
-                                    ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border-r-2 border-blue-500'
-                                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                                }`}
-                              >
-                                <span className="mr-3">{item.icon}</span>
-                                {item.name}
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      </div>
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-yellow-400 rounded-full"></div>
                     )}
-                  </div>
+                    <div className={`absolute inset-0 rounded-xl transition-all duration-300 ${
+                      isActive ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20' : 'group-hover:bg-white/5'
+                    }`}></div>
+                  </Link>
                 )
               })}
             </div>
 
             {/* User Actions */}
             <div className="flex items-center space-x-3">
-              <Button className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                💬 Сообщения
-              </Button>
+              {/* Notifications */}
+              <button className="relative p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 group">
+                <span className="text-gray-300 group-hover:text-white text-lg">🔔</span>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              </button>
+
+              {/* Profile */}
               <Link href="/profile">
-                <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                  👤 Профиль
-                </Button>
+                <button className="flex items-center space-x-3 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 group">
+                  <div className="h-8 w-8 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">👤</span>
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold text-white">Профиль</div>
+                    <div className="text-xs text-gray-400">{userRole}</div>
+                  </div>
+                </button>
               </Link>
+
+              {/* Logout */}
               {onLogout && (
-                <Button
+                <button
                   onClick={onLogout}
-                  className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold px-3 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
                 >
-                  🚪 Выход
-                </Button>
+                  Выход
+                </button>
               )}
             </div>
           </div>
@@ -203,25 +186,30 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
       </nav>
 
       {/* Mobile Navigation */}
-      <nav className="lg:hidden bg-white/80 backdrop-blur-md shadow-lg border-b border-white/20">
+      <nav className="lg:hidden bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 shadow-2xl border-b border-purple-500/20">
         <div className="px-4">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg mr-2">
-                <span className="text-white font-bold text-sm">A</span>
+            <div className="flex items-center space-x-3">
+              <div className="h-10 w-10 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-xl">
+                <span className="text-white font-black text-lg">A</span>
               </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Affectivity
-              </span>
+              <div className="flex flex-col">
+                <span className="text-lg font-black bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  Affectivity
+                </span>
+                <span className="text-xs text-gray-400 font-medium">
+                  {userRole}
+                </span>
+              </div>
             </div>
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-white/70 transition-all duration-300"
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300"
             >
-              <svg className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
@@ -229,44 +217,39 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 mt-2 mb-4 z-[99999]">
+            <div className="lg:hidden bg-slate-800/95 backdrop-blur-md rounded-2xl shadow-2xl border border-purple-500/20 mt-2 mb-4 z-[99999]">
               <div className="px-2 pt-2 pb-3 space-y-1">
-                {/* Role-based sections */}
-                {Object.keys(roleNavigation).map((role) => {
-                  const items = roleNavigation[role as keyof typeof roleNavigation]
-                  return (
-                    <div key={role} className="space-y-1">
-                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        {role}
-                      </div>
-                      {items.map((item) => {
-                        const isActive = pathname === item.href
-                        return (
-                          <Link
-                            key={item.name}
-                            href={item.href}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={`block px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
-                              isActive
-                                ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                                : 'text-gray-700 hover:bg-white/50 hover:text-gray-900'
-                            }`}
-                          >
-                            <span className="mr-3">{item.icon}</span>
-                            {item.name}
-                          </Link>
-                        )
-                      })}
-                    </div>
-                  )
-                })}
+                {/* Current Role Navigation */}
+                <div className="space-y-1">
+                  <div className="px-3 py-2 text-xs font-semibold text-purple-400 uppercase tracking-wider">
+                    Навигация
+                  </div>
+                  {currentRoleItems.map((item) => {
+                    const isActive = pathname === item.href
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`block px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                            : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <span className="mr-3 text-lg">{item.icon}</span>
+                        {item.name}
+                      </Link>
+                    )
+                  })}
+                </div>
                 
                 {/* User Actions */}
-                <div className="border-t border-gray-200 pt-2 mt-2">
+                <div className="border-t border-purple-500/20 pt-2 mt-2">
                   <Link
                     href="/profile"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-white/50 hover:text-gray-900 transition-all duration-300"
+                    className="block px-3 py-3 rounded-xl text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-300"
                   >
                     <span className="mr-3">👤</span>
                     Профиль
@@ -277,7 +260,7 @@ export default function Navigation({ userRole, onLogout }: NavigationProps) {
                         setIsMobileMenuOpen(false)
                         onLogout()
                       }}
-                      className="w-full text-left px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg hover:from-red-600 hover:to-pink-600"
+                      className="w-full text-left px-3 py-3 rounded-xl text-sm font-medium transition-all duration-300 bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg hover:from-red-600 hover:to-pink-600"
                     >
                       <span className="mr-3">🚪</span>
                       Выход
