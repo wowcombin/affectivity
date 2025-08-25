@@ -10,18 +10,24 @@ import { toast } from 'sonner'
 interface Card {
   id: string
   card_number: string
-  card_expiry: string
-  card_cvv: string
+  expiry_date: string
+  cvv: string
   card_type: 'pink' | 'gray'
-  is_active: boolean
-  assigned_to?: string
-  assigned_site?: string
-  times_assigned: number
-  times_worked: number
+  status: 'free' | 'assigned' | 'in_process' | 'completed'
+  assigned_employee_id?: string
+  assigned_casino_id?: string
+  deposit_amount?: number
+  withdrawal_amount?: number
+  profit?: number
   created_at: string
-  bank_account: {
-    bank_name: string
-    bank_country: string
+  bank_accounts?: {
+    id: string
+    account_name: string
+    banks?: {
+      id: string
+      name: string
+      country: string
+    }
   }
 }
 
@@ -193,6 +199,26 @@ export default function CardsPage() {
     return 'Отработана'
   }
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'free': return 'bg-green-100 text-green-800'
+      case 'assigned': return 'bg-blue-100 text-blue-800'
+      case 'in_process': return 'bg-yellow-100 text-yellow-800'
+      case 'completed': return 'bg-purple-100 text-purple-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusBadgeText = (status: string) => {
+    switch (status) {
+      case 'free': return '🆓 Свободна'
+      case 'assigned': return '📋 Назначена'
+      case 'in_process': return '⏳ В процессе'
+      case 'completed': return '✅ Завершена'
+      default: return '❓ Неизвестно'
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
@@ -281,9 +307,9 @@ export default function CardsPage() {
             <div className="flex items-center">
               <div className="text-3xl mr-4">✅</div>
               <div>
-                <p className="text-sm text-gray-600">Активные карты</p>
+                <p className="text-sm text-gray-600">Свободные карты</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {cards.filter(card => card.is_active).length}
+                  {cards.filter(card => card.status === 'free').length}
                 </p>
               </div>
             </div>
@@ -340,7 +366,7 @@ export default function CardsPage() {
                       <td className="py-3 px-4">
                         <div className="font-mono text-sm">
                           <div className="text-gray-900">{card.card_number}</div>
-                          <div className="text-gray-500">{card.card_expiry} | {card.card_cvv}</div>
+                          <div className="text-gray-500">{card.expiry_date} | {card.cvv}</div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -350,22 +376,22 @@ export default function CardsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div>
-                          <div className="font-semibold text-gray-900">{card.bank_account.bank_name}</div>
-                          <div className="text-sm text-gray-500">{card.bank_account.bank_country}</div>
+                          <div className="font-semibold text-gray-900">{card.bank_accounts?.banks?.name || 'N/A'}</div>
+                          <div className="text-sm text-gray-500">{card.bank_accounts?.banks?.country || 'N/A'}</div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${card.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {card.is_active ? '✅ Активна' : '❌ Неактивна'}
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(card.status)}`}>
+                          {getStatusBadgeText(card.status)}
                         </span>
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-sm">
-                          {card.assigned_to ? (
+                          {card.assigned_employee_id ? (
                             <div>
-                              <div className="text-gray-900">Сотрудник: {card.assigned_to}</div>
-                              {card.assigned_site && (
-                                <div className="text-gray-500">Сайт: {card.assigned_site}</div>
+                              <div className="text-gray-900">ID: {card.assigned_employee_id}</div>
+                              {card.assigned_casino_id && (
+                                <div className="text-gray-500">Казино: {card.assigned_casino_id}</div>
                               )}
                             </div>
                           ) : (
@@ -375,11 +401,9 @@ export default function CardsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="text-sm">
-                          <div className="text-gray-900">Назначена: {card.times_assigned} раз</div>
-                          <div className="text-gray-500">Отработана: {card.times_worked} раз</div>
-                          <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getStatusColor(card.times_assigned, card.times_worked)} text-white mt-1`}>
-                            {getStatusText(card.times_assigned, card.times_worked)}
-                          </span>
+                          <div className="text-gray-900">Депозит: {card.deposit_amount || 0}</div>
+                          <div className="text-gray-500">Вывод: {card.withdrawal_amount || 0}</div>
+                          <div className="text-green-600 font-semibold">Прибыль: {card.profit || 0}</div>
                         </div>
                       </td>
                     </tr>
