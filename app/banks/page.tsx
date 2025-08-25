@@ -133,32 +133,22 @@ export default function BanksPage() {
         'Content-Type': 'application/json'
       }
 
-      const [banksRes, accountsRes, cardsRes] = await Promise.all([
+      const [banksRes, cardsRes] = await Promise.all([
         fetch('/api/banks', { headers }),
-        fetch('/api/bank-accounts', { headers }),
         fetch('/api/cards', { headers })
       ])
 
       console.log('Banks response:', banksRes.status)
-      console.log('Accounts response:', accountsRes.status)
       console.log('Cards response:', cardsRes.status)
 
       if (banksRes.ok) {
         const banksData = await banksRes.json()
-        setBanks(banksData.banks)
+        setBanks(banksData.banks || [])
+        setBankAccounts(banksData.bankAccounts || [])
       } else {
         const banksError = await banksRes.json()
         console.error('Banks error:', banksError)
         toast.error('Ошибка загрузки банков: ' + banksError.error)
-      }
-
-      if (accountsRes.ok) {
-        const accountsData = await accountsRes.json()
-        setBankAccounts(accountsData.bankAccounts)
-      } else {
-        const accountsError = await accountsRes.json()
-        console.error('Accounts error:', accountsError)
-        toast.error('Ошибка загрузки аккаунтов: ' + accountsError.error)
       }
 
       if (cardsRes.ok) {
@@ -189,7 +179,10 @@ export default function BanksPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(bankForm),
+        body: JSON.stringify({
+          type: 'bank',
+          ...bankForm
+        }),
       })
 
       if (response.ok) {
@@ -211,10 +204,17 @@ export default function BanksPage() {
     e.preventDefault()
     
     try {
-      const response = await fetch('/api/bank-accounts', {
+      const token = localStorage.getItem('auth-token')
+      const response = await fetch('/api/banks', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(accountForm),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          type: 'account',
+          ...accountForm
+        }),
       })
 
       if (response.ok) {

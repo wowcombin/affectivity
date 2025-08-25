@@ -91,21 +91,49 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const { data: banks, error } = await supabase
+    // Получаем банки
+    const { data: banks, error: banksError } = await supabase
       .from('banks')
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Error fetching banks:', error)
+    if (banksError) {
+      console.error('Error fetching banks:', banksError)
       return NextResponse.json({ 
         banks: [],
+        bankAccounts: [],
         error: 'Failed to fetch banks',
-        details: error.message
+        details: banksError.message
       })
     }
 
-    return NextResponse.json({ banks: banks || [] })
+    // Получаем банковские аккаунты с информацией о банках
+    const { data: bankAccounts, error: accountsError } = await supabase
+      .from('bank_accounts')
+      .select(`
+        *,
+        banks (
+          id,
+          name,
+          country
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (accountsError) {
+      console.error('Error fetching bank accounts:', accountsError)
+      return NextResponse.json({ 
+        banks: banks || [],
+        bankAccounts: [],
+        error: 'Failed to fetch bank accounts',
+        details: accountsError.message
+      })
+    }
+
+    return NextResponse.json({ 
+      banks: banks || [], 
+      bankAccounts: bankAccounts || [] 
+    })
   } catch (error) {
     console.error('Error in GET /api/banks:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -189,30 +217,81 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, country } = body
+    const { type, ...data } = body
 
-    // Валидация
-    if (!name || !country) {
-      return NextResponse.json({ error: 'Name and country are required' }, { status: 400 })
+    // Определяем тип запроса
+    if (type === 'bank') {
+      // Создание банка
+      const { name, country } = data
+
+      // Валидация
+      if (!name || !country) {
+        return NextResponse.json({ error: 'Name and country are required' }, { status: 400 })
+      }
+
+      const bankData = {
+        name,
+        country,
+        currency: 'USD'
+      }
+
+      const { data: bank, error } = await supabase
+        .from('banks')
+        .insert(bankData as any)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating bank:', error)
+        return NextResponse.json({ error: 'Failed to create bank' }, { status: 500 })
+      }
+
+      return NextResponse.json({ bank })
+    } else if (type === 'account') {
+      // Создание банковского аккаунта
+      const { 
+        bank_id, 
+        account_name, 
+        account_number, 
+        sort_code, 
+        login_url, 
+        login_password, 
+        bank_address 
+      } = data
+
+      // Валидация
+      if (!bank_id || !account_name || !account_number || !sort_code || !login_url || !login_password) {
+        return NextResponse.json({ error: 'Missing required fields for bank account' }, { status: 400 })
+      }
+
+      const accountData = {
+        bank_id,
+        account_name,
+        account_number,
+        sort_code,
+        login_url,
+        login_password,
+        bank_address: bank_address || '',
+        pink_cards_daily_limit: 5,
+        pink_cards_remaining: 5,
+        last_reset_date: new Date().toISOString()
+      }
+
+      const { data: account, error } = await supabase
+        .from('bank_accounts')
+        .insert(accountData as any)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating bank account:', error)
+        return NextResponse.json({ error: 'Failed to create bank account' }, { status: 500 })
+      }
+
+      return NextResponse.json({ account })
+    } else {
+      return NextResponse.json({ error: 'Invalid request type. Use "bank" or "account"' }, { status: 400 })
     }
-
-    const bankData = {
-      name,
-      country
-    }
-
-    const { data, error } = await supabase
-      .from('banks')
-      .insert(bankData)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating bank:', error)
-      return NextResponse.json({ error: 'Failed to create bank' }, { status: 500 })
-    }
-
-    return NextResponse.json({ bank: data })
   } catch (error) {
     console.error('Error in POST /api/banks:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
