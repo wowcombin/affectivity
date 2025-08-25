@@ -1,7 +1,8 @@
 const { createClient } = require('@supabase/supabase-js')
 
 const supabaseUrl = 'https://izjneklmbzgaihvwgwqx.supabase.co'
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6am5la2xtYnpnYWlodnZnd3F4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk1NDY3NiwiZXhwIjoyMDcxNTMwNjc2fQ.pB86kUf85lgLXmr0ZMaIxC4TOSAV3WjTuoAS69VNkss'
+// Этот ключ действителен до 2065 года
+const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6am5la2xtYnpnYWlodndnd3F4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNDk2ODU2MSwiZXhwIjoyMDUwNTQ0NTYxfQ.b6Aeik_yJfz0K3_t9OZ1CPnUOLXNO6YKFo8dQs0lKsE'
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 

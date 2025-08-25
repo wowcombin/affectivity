@@ -63,6 +63,8 @@ export default function BanksPage() {
   const [showAddBank, setShowAddBank] = useState(false)
   const [showAddAccount, setShowAddAccount] = useState(false)
   const [showAddCard, setShowAddCard] = useState(false)
+  const [showEditCard, setShowEditCard] = useState(false)
+  const [editingCard, setEditingCard] = useState<Card | null>(null)
   const [selectedBank, setSelectedBank] = useState<string>('')
   const [selectedAccount, setSelectedAccount] = useState<string>('')
   const router = useRouter()
@@ -288,6 +290,74 @@ export default function BanksPage() {
     } catch (error) {
       console.error('Error updating pink cards:', error)
       toast.error('Ошибка обновления количества карт')
+    }
+  }
+
+  const handleEditCard = (card: Card) => {
+    setEditingCard(card)
+    setCardForm({
+      bank_account_id: card.bank_account_id,
+      card_number: card.card_number,
+      expiry_date: card.expiry_date,
+      cvv: card.cvv,
+      card_type: card.card_type
+    })
+    setShowEditCard(true)
+  }
+
+  const handleUpdateCard = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!editingCard) return
+
+    try {
+      const response = await fetch(`/api/cards/${editingCard.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cardForm),
+      })
+
+      if (response.ok) {
+        toast.success('Карта успешно обновлена!')
+        setShowEditCard(false)
+        setEditingCard(null)
+        setCardForm({
+          bank_account_id: '',
+          card_number: '',
+          expiry_date: '',
+          cvv: '',
+          card_type: 'gray'
+        })
+        loadData()
+      } else {
+        const error = await response.json()
+        toast.error(error.message || 'Ошибка обновления карты')
+      }
+    } catch (error) {
+      console.error('Error updating card:', error)
+      toast.error('Ошибка обновления карты')
+    }
+  }
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить эту карту?')) return
+
+    try {
+      const response = await fetch(`/api/cards/${cardId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (response.ok) {
+        toast.success('Карта успешно удалена!')
+        loadData()
+      } else {
+        const error = await response.json()
+        toast.error(error.message || 'Ошибка удаления карты')
+      }
+    } catch (error) {
+      console.error('Error deleting card:', error)
+      toast.error('Ошибка удаления карты')
     }
   }
 
@@ -526,7 +596,7 @@ export default function BanksPage() {
                           <div className="text-sm text-gray-900">{bank?.name || 'Неизвестно'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">****{account.account_number.slice(-4)}</div>
+                          <div className="text-sm text-gray-900 font-mono">{account.account_number}</div>
                           <div className="text-sm text-gray-500">{account.sort_code}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -594,6 +664,7 @@ export default function BanksPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Аккаунт</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Прибыль</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата создания</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -605,7 +676,7 @@ export default function BanksPage() {
                       <tr key={card.id} className="hover:bg-gray-50 transition-colors duration-200">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">****{card.card_number.slice(-4)}</div>
+                            <div className="text-sm font-medium text-gray-900 font-mono">{card.card_number}</div>
                             <div className="text-sm text-gray-500">{card.expiry_date}</div>
                           </div>
                         </td>
@@ -639,6 +710,28 @@ export default function BanksPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(card.created_at)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleEditCard(card)}
+                              className="text-indigo-600 hover:text-indigo-900 transition-colors"
+                              title="Редактировать"
+                            >
+                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCard(card.id)}
+                              className="text-red-600 hover:text-red-900 transition-colors"
+                              title="Удалить"
+                            >
+                              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -941,6 +1034,135 @@ export default function BanksPage() {
                     className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     Добавить карту
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Card Modal */}
+      {showEditCard && editingCard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Редактировать карту</h2>
+                <button
+                  onClick={() => {
+                    setShowEditCard(false)
+                    setEditingCard(null)
+                    setCardForm({
+                      bank_account_id: '',
+                      card_number: '',
+                      expiry_date: '',
+                      cvv: '',
+                      card_type: 'gray'
+                    })
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateCard} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Банковский аккаунт *</label>
+                  <select
+                    required
+                    value={cardForm.bank_account_id}
+                    onChange={(e) => setCardForm({...cardForm, bank_account_id: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  >
+                    <option value="">Выберите аккаунт</option>
+                    {bankAccounts.map(account => {
+                      const bank = banks.find(b => b.id === account.bank_id)
+                      return (
+                        <option key={account.id} value={account.id}>
+                          {account.account_name} - {bank?.name}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Номер карты *</label>
+                  <input
+                    type="text"
+                    required
+                    value={cardForm.card_number}
+                    onChange={(e) => setCardForm({...cardForm, card_number: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    placeholder="1234 5678 9012 3456"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Срок действия *</label>
+                    <input
+                      type="text"
+                      required
+                      value={cardForm.expiry_date}
+                      onChange={(e) => setCardForm({...cardForm, expiry_date: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="MM/YY"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">CVV *</label>
+                    <input
+                      type="text"
+                      required
+                      value={cardForm.cvv}
+                      onChange={(e) => setCardForm({...cardForm, cvv: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                      placeholder="123"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Тип карты</label>
+                  <select
+                    value={cardForm.card_type}
+                    onChange={(e) => setCardForm({...cardForm, card_type: e.target.value as 'pink' | 'gray'})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  >
+                    <option value="gray">⚫ Серая</option>
+                    <option value="pink">🩷 Розовая</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end space-x-4 pt-4">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowEditCard(false)
+                      setEditingCard(null)
+                      setCardForm({
+                        bank_account_id: '',
+                        card_number: '',
+                        expiry_date: '',
+                        cvv: '',
+                        card_type: 'gray'
+                      })
+                    }}
+                    className="px-6 py-2 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900"
+                  >
+                    Отмена
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold px-6 py-2 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    Сохранить изменения
                   </Button>
                 </div>
               </form>

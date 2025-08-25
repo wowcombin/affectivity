@@ -188,41 +188,75 @@ export async function GET(request: NextRequest) {
     
     console.log('Начинаем инициализацию базы данных...')
     
-    // Выполняем SQL для создания таблиц
-    const { data, error } = await supabase.rpc('exec_sql', {
-      sql: CREATE_TABLES_SQL
-    }).catch(async (err) => {
-      // Если RPC не существует, пробуем создать таблицы через insert
-      console.log('RPC не найден, пробуем альтернативный метод...')
-      
-      // Создаем тестовые записи для инициализации таблиц
-      const results = {
-        users: null,
-        banks: null,
-        errors: []
-      }
-      
-      // Пробуем создать пользователя
+    // Прямое выполнение SQL не поддерживается, создаем таблицы через insert
+    console.log('Создаем таблицы через insert...')
+    
+    const results = {
+      tablesCreated: [],
+      errors: []
+    }
+    
+    // Пробуем создать пользователей
+    try {
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .insert({
-          username: 'admin',
-          email: 'admin@affectivity.com',
-          password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
-          full_name: 'Admin User',
-          role: 'Admin'
-        })
+        .insert([
+          {
+            username: 'admin',
+            email: 'admin@affectivity.com',
+            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
+            full_name: 'Admin User',
+            role: 'Admin'
+          },
+          {
+            username: 'manager',
+            email: 'manager@affectivity.com',
+            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
+            full_name: 'Manager User',
+            role: 'Manager'
+          },
+          {
+            username: 'hr',
+            email: 'hr@affectivity.com',
+            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
+            full_name: 'HR User',
+            role: 'HR'
+          },
+          {
+            username: 'cfo',
+            email: 'cfo@affectivity.com',
+            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
+            full_name: 'CFO User',
+            role: 'CFO'
+          },
+          {
+            username: 'employee',
+            email: 'employee@affectivity.com',
+            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
+            full_name: 'Employee User',
+            role: 'Employee'
+          },
+          {
+            username: 'tester',
+            email: 'tester@affectivity.com',
+            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
+            full_name: 'Tester User',
+            role: 'Tester'
+          }
+        ])
         .select()
-        .single()
       
       if (userError) {
         results.errors.push(`Users: ${userError.message}`)
       } else {
-        results.users = userData
+        results.tablesCreated.push('users')
       }
-      
-      return { data: results, error: results.errors.length > 0 ? results.errors.join(', ') : null }
-    })
+    } catch (err: any) {
+      results.errors.push(`Users: ${err.message}`)
+    }
+    
+    const data = results
+    const error = results.errors.length > 0 ? results.errors.join(', ') : null
     
     if (error) {
       console.error('Ошибка инициализации:', error)
