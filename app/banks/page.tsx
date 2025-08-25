@@ -137,7 +137,7 @@ export default function BanksPage() {
 
       const [banksRes, cardsRes] = await Promise.all([
         fetch('/api/banks', { headers }),
-        fetch('/api/cards', { headers })
+        fetch('/api/cards/v2', { headers })
       ])
 
       console.log('Banks response:', banksRes.status)
@@ -246,7 +246,7 @@ export default function BanksPage() {
     e.preventDefault()
     
     try {
-      const response = await fetch('/api/cards', {
+      const response = await fetch('/api/cards/v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cardForm),
@@ -311,7 +311,7 @@ export default function BanksPage() {
     if (!editingCard) return
 
     try {
-      const response = await fetch(`/api/cards/${editingCard.id}`, {
+      const response = await fetch(`/api/cards/v2/${editingCard.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cardForm),
@@ -343,7 +343,7 @@ export default function BanksPage() {
     if (!confirm('Вы уверены, что хотите удалить эту карту?')) return
 
     try {
-      const response = await fetch(`/api/cards/${cardId}`, {
+      const response = await fetch(`/api/cards/v2/${cardId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       })
