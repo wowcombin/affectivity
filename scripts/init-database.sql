@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+-- Инициализация базы данных Affectivity
+-- Выполните этот скрипт в Supabase SQL Editor
 
-// SQL для создания таблиц
-const CREATE_TABLES_SQL = `
 -- Создание таблицы users
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -174,122 +172,8 @@ INSERT INTO users (username, email, password_hash, full_name, role) VALUES
   ('employee', 'employee@affectivity.com', '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS', 'Employee User', 'Employee'),
   ('tester', 'tester@affectivity.com', '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS', 'Tester User', 'Tester')
 ON CONFLICT (username) DO NOTHING;
-`
 
-export async function GET(request: NextRequest) {
-  try {
-    // Проверяем секретный ключ для безопасности
-    const secret = request.nextUrl.searchParams.get('secret')
-    if (secret !== 'init-affectivity-2024') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const supabase = createAdminClient()
-    
-    console.log('Начинаем инициализацию базы данных...')
-    
-    // Прямое выполнение SQL не поддерживается, создаем таблицы через insert
-    console.log('Создаем таблицы через insert...')
-    
-    const results = {
-      tablesCreated: [],
-      errors: []
-    }
-    
-    // Пробуем создать пользователей
-    try {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .insert([
-          {
-            username: 'admin',
-            email: 'admin@affectivity.com',
-            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
-            full_name: 'Admin User',
-            role: 'Admin'
-          },
-          {
-            username: 'manager',
-            email: 'manager@affectivity.com',
-            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
-            full_name: 'Manager User',
-            role: 'Manager'
-          },
-          {
-            username: 'hr',
-            email: 'hr@affectivity.com',
-            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
-            full_name: 'HR User',
-            role: 'HR'
-          },
-          {
-            username: 'cfo',
-            email: 'cfo@affectivity.com',
-            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
-            full_name: 'CFO User',
-            role: 'CFO'
-          },
-          {
-            username: 'employee',
-            email: 'employee@affectivity.com',
-            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
-            full_name: 'Employee User',
-            role: 'Employee'
-          },
-          {
-            username: 'tester',
-            email: 'tester@affectivity.com',
-            password_hash: '$2a$10$X3yXqAHPcfqyC1ZGKyK6OeXhVl.2X/X6y9RxeJzW7Tx8iWYGZWWKS',
-            full_name: 'Tester User',
-            role: 'Tester'
-          }
-        ])
-        .select()
-      
-      if (userError) {
-        results.errors.push(`Users: ${userError.message}`)
-      } else {
-        results.tablesCreated.push('users')
-      }
-    } catch (err: any) {
-      results.errors.push(`Users: ${err.message}`)
-    }
-    
-    const data = results
-    const error = results.errors.length > 0 ? results.errors.join(', ') : null
-    
-    if (error) {
-      console.error('Ошибка инициализации:', error)
-      return NextResponse.json({ 
-        error: 'Failed to initialize database',
-        details: error
-      }, { status: 500 })
-    }
-    
-    // Проверяем, какие таблицы созданы
-    const tables = ['users', 'banks', 'bank_accounts', 'cards', 'employees', 'casinos', 'transactions']
-    const tableStatus = {}
-    
-    for (const table of tables) {
-      const { count, error } = await supabase
-        .from(table)
-        .select('*', { count: 'exact', head: true })
-      
-      tableStatus[table] = error ? 'не существует' : `создана (записей: ${count || 0})`
-    }
-    
-    return NextResponse.json({ 
-      success: true,
-      message: 'Database initialization completed',
-      tables: tableStatus,
-      result: data
-    })
-    
-  } catch (error: any) {
-    console.error('Error in database initialization:', error)
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error?.message || 'Unknown error'
-    }, { status: 500 })
-  }
-}
+-- Создание записей сотрудников
+INSERT INTO employees (user_id, percentage_rate, is_active)
+SELECT id, 10.00, true FROM users WHERE role IN ('Employee', 'Tester')
+ON CONFLICT DO NOTHING;
