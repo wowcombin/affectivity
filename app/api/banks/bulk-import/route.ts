@@ -79,17 +79,17 @@ export async function POST(request: NextRequest) {
       .from('banks')
       .insert({
         name: validatedData.bank_name,
-        country: validatedData.bank_country,
-        currency: validatedData.bank_currency,
-        is_active: true
+        country: validatedData.bank_country
       } as any)
       .select()
       .single()
 
-    if (bankError) {
+    if (bankError || !bank) {
       console.error('Error creating bank:', bankError)
       return NextResponse.json({ error: 'Failed to create bank' }, { status: 500 })
     }
+
+    const bankData = bank as any
 
     let totalCardsCreated = 0
     let totalAccountsCreated = 0
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
       const { data: bankAccount, error: accountError } = await supabase
         .from('bank_accounts')
         .insert({
-          bank_id: bank.id,
+          bank_id: bankData.id,
           account_name: accountData.account_name,
           account_number: accountData.account_number,
           sort_code: accountData.sort_code,
@@ -108,16 +108,17 @@ export async function POST(request: NextRequest) {
           login_password: accountData.login_password,
           pink_cards_daily_limit: accountData.pink_cards_daily_limit,
           pink_cards_remaining: accountData.pink_cards_daily_limit,
-          last_reset_date: new Date().toISOString(),
-          is_active: true
+          last_reset_date: new Date().toISOString()
         } as any)
         .select()
         .single()
 
-      if (accountError) {
+      if (accountError || !bankAccount) {
         console.error('Error creating bank account:', accountError)
         continue
       }
+
+      const accountDataTyped = bankAccount as any
 
       totalAccountsCreated++
 
@@ -126,14 +127,12 @@ export async function POST(request: NextRequest) {
         const { error: cardError } = await supabase
           .from('cards')
           .insert({
-            bank_account_id: bankAccount.id,
+            bank_account_id: accountDataTyped.id,
             card_number: cardData.card_number,
             expiry_date: cardData.expiry_date,
             cvv: cardData.cvv,
             card_type: cardData.card_type,
-            status: cardData.status,
-            notes: cardData.notes || '',
-            is_active: true
+            status: cardData.status
           } as any)
 
         if (cardError) {
@@ -162,7 +161,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: `Successfully imported ${validatedData.bank_name}`,
       data: {
-        bank_id: bank.id,
+        bank_id: bankData.id,
         accounts_created: totalAccountsCreated,
         cards_created: totalCardsCreated
       }
