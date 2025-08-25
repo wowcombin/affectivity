@@ -189,20 +189,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, type } = body
+    const { name, country } = body
 
     // Валидация
-    if (!name || !type) {
-      return NextResponse.json({ error: 'Name and type are required' }, { status: 400 })
-    }
-
-    if (!['revolut', 'uk', 'other'].includes(type)) {
-      return NextResponse.json({ error: 'Invalid bank type' }, { status: 400 })
+    if (!name || !country) {
+      return NextResponse.json({ error: 'Name and country are required' }, { status: 400 })
     }
 
     const bankData = {
       name,
-      type
+      country
     }
 
     const { data, error } = await supabase

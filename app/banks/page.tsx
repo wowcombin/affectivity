@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 interface Bank {
   id: string
   name: string
-  type: 'revolut' | 'uk' | 'other'
+  country: string
   created_at: string
   updated_at: string
 }
@@ -22,6 +22,7 @@ interface BankAccount {
   sort_code: string
   login_url: string
   login_password: string
+  bank_address: string
   pink_cards_daily_limit: number
   pink_cards_remaining: number
   last_reset_date: string
@@ -68,7 +69,7 @@ export default function BanksPage() {
 
   const [bankForm, setBankForm] = useState({
     name: '',
-    type: 'uk' as 'revolut' | 'uk' | 'other'
+    country: ''
   })
 
   const [accountForm, setAccountForm] = useState({
@@ -78,7 +79,7 @@ export default function BanksPage() {
     sort_code: '',
     login_url: '',
     login_password: '',
-    pink_cards_daily_limit: 5
+    bank_address: ''
   })
 
   const [cardForm, setCardForm] = useState({
@@ -194,7 +195,7 @@ export default function BanksPage() {
       if (response.ok) {
         toast.success('Банк успешно добавлен!')
         setShowAddBank(false)
-        setBankForm({ name: '', type: 'uk' })
+        setBankForm({ name: '', country: '' })
         loadData()
       } else {
         const error = await response.json()
@@ -226,7 +227,7 @@ export default function BanksPage() {
           sort_code: '',
           login_url: '',
           login_password: '',
-          pink_cards_daily_limit: 5
+          bank_address: ''
         })
         loadData()
       } else {
@@ -435,7 +436,7 @@ export default function BanksPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Банк</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Тип</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Страна</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Аккаунтов</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Карт</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Дата создания</th>
@@ -454,13 +455,8 @@ export default function BanksPage() {
                           <div className="text-sm font-medium text-gray-900">{bank.name}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            bank.type === 'revolut' ? 'bg-blue-100 text-blue-800' :
-                            bank.type === 'uk' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {bank.type === 'revolut' ? 'Revolut' : 
-                             bank.type === 'uk' ? 'UK Bank' : 'Other'}
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {bank.country || 'N/A'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -521,6 +517,9 @@ export default function BanksPage() {
                           <div>
                             <div className="text-sm font-medium text-gray-900">{account.account_name}</div>
                             <div className="text-sm text-gray-500">{account.login_url}</div>
+                            {account.bank_address && (
+                              <div className="text-xs text-gray-400 mt-1">{account.bank_address}</div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -682,17 +681,15 @@ export default function BanksPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Тип банка *</label>
-                  <select
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Страна банка *</label>
+                  <input
+                    type="text"
                     required
-                    value={bankForm.type}
-                    onChange={(e) => setBankForm({...bankForm, type: e.target.value as 'revolut' | 'uk' | 'other'})}
+                    value={bankForm.country}
+                    onChange={(e) => setBankForm({...bankForm, country: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  >
-                    <option value="uk">UK Bank</option>
-                    <option value="revolut">Revolut</option>
-                    <option value="other">Other</option>
-                  </select>
+                    placeholder="UK, IE, DE, ES, etc."
+                  />
                 </div>
 
                 <div className="flex justify-end space-x-4 pt-4">
@@ -812,15 +809,13 @@ export default function BanksPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Лимит розовых карт в день</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Адрес банка</label>
                   <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={accountForm.pink_cards_daily_limit}
-                    onChange={(e) => setAccountForm({...accountForm, pink_cards_daily_limit: parseInt(e.target.value)})}
+                    type="text"
+                    value={accountForm.bank_address}
+                    onChange={(e) => setAccountForm({...accountForm, bank_address: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                    placeholder="5"
+                    placeholder="Полный адрес банка"
                   />
                 </div>
 
@@ -922,14 +917,13 @@ export default function BanksPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Тип карты *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Тип карты</label>
                   <select
-                    required
                     value={cardForm.card_type}
                     onChange={(e) => setCardForm({...cardForm, card_type: e.target.value as 'pink' | 'gray'})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                   >
-                    <option value="gray">⚫ Серая</option>
+                    <option value="gray">⚫ Серая (по умолчанию)</option>
                     <option value="pink">🩷 Розовая</option>
                   </select>
                 </div>

@@ -57,30 +57,31 @@ export async function POST(request: NextRequest) {
     }
 
     const {
-      bank_name,
-      bank_country,
+      bank_id,
+      account_name,
       account_number,
       sort_code,
       login_url,
-      login_username,
       login_password,
-      pink_cards_limit
+      bank_address
     } = body
 
     // Валидация
-    if (!bank_name || !bank_country || !account_number || !sort_code || !login_url || !login_username || !login_password) {
+    if (!bank_id || !account_name || !account_number || !sort_code || !login_url || !login_password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     const accountData = {
-      bank_name,
-      bank_country,
+      bank_id,
+      account_name,
       account_number,
       sort_code,
       login_url,
-      login_username,
       login_password,
-      pink_cards_limit: pink_cards_limit || 5
+      bank_address: bank_address || '',
+      pink_cards_daily_limit: 5,
+      pink_cards_remaining: 5,
+      last_reset_date: new Date().toISOString()
     }
 
     const { data, error } = await supabase
