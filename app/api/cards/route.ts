@@ -77,28 +77,53 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Сначала получаем карты без JOIN
     const { data: cards, error } = await supabase
       .from('cards')
-      .select(`
-        *,
-        bank_accounts (
-          id,
-          account_name,
-          banks (
-            id,
-            name,
-            country
-          )
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (error) {
       console.error('Error fetching cards:', error)
-      return NextResponse.json({ error: 'Failed to fetch cards' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to fetch cards', 
+        details: error.message,
+        code: error.code 
+      }, { status: 500 })
     }
 
-    return NextResponse.json({ cards: cards || [] })
+    console.log(`Fetched ${cards?.length || 0} cards`)
+
+    // Пробуем получить карты с JOIN
+    let cardsWithRelations = cards || []
+    try {
+      const { data: cardsJoined, error: joinError } = await supabase
+        .from('cards')
+        .select(`
+          *,
+          bank_accounts!inner (
+            id,
+            account_name,
+            banks!inner (
+              id,
+              name,
+              country
+            )
+          )
+        `)
+        .order('created_at', { ascending: false })
+      
+      if (!joinError && cardsJoined) {
+        cardsWithRelations = cardsJoined
+        console.log('Successfully fetched cards with relations')
+      } else {
+        console.warn('Failed to fetch cards with relations:', joinError?.message)
+      }
+    } catch (joinErr) {
+      console.warn('Error in JOIN query:', joinErr)
+    }
+
+    return NextResponse.json({ cards: cardsWithRelations })
   } catch (error) {
     console.error('Error in GET /api/cards:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
