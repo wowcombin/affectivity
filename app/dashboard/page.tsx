@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/Button'
 import Navigation from '@/app/components/Navigation'
+import JuniorDashboard from '@/app/components/JuniorDashboard'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -48,6 +49,7 @@ interface DashboardData {
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
   const [userRole, setUserRole] = useState('')
   const router = useRouter()
 
@@ -55,8 +57,15 @@ export default function DashboardPage() {
     // Получаем роль пользователя
     const userData = localStorage.getItem('user')
     if (userData) {
-      const user = JSON.parse(userData)
-      setUserRole(user.role)
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
+      setUserRole(parsedUser.role)
+      
+      // Для Employee и Tester показываем специальный дашборд
+      if (parsedUser.role === 'Employee' || parsedUser.role === 'Tester') {
+        setIsLoading(false)
+        return
+      }
     }
     loadDashboard()
   }, [])
@@ -130,6 +139,11 @@ export default function DashboardPage() {
         </div>
       </div>
     )
+  }
+
+  // Показываем специальный дашборд для Employee и Tester
+  if (user && (user.role === 'Employee' || user.role === 'Tester')) {
+    return <JuniorDashboard userId={user.id} />
   }
 
   return (
